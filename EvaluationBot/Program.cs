@@ -155,7 +155,7 @@ public class Program
             DataBaseLoader.AddXp(messageParam.Author, PrivateSettings.XpPerMessage);
             if (info.Level() != oldLevel)
             {
-                await messageParam.Channel.SendMessageAsync($"{messageParam.Author.Username} leveled up!");
+                await messageParam.Channel.SendMessageAsync($"{messageParam.Author.Username} leveled up!").DeleteAfterSeconds(20);
             }
             await Task.Delay(PrivateSettings.XpCooldown);
             XpCooldowns.Remove(messageParam.Author.Id);
