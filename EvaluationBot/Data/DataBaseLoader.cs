@@ -51,7 +51,7 @@ namespace EvaluationBot.Data
             if ((await TimedActions.Find(Builders<TimedAction>.Filter.Eq("_id", _id)).CountDocumentsAsync())==0)
             {
                 TimedActions.InsertOne(new TimedAction(_id, kind, Start, End));
-                UpdateDefinition<UserInfo> update = Builders<UserInfo>.Update.Inc("TimedActions", -1);
+                UpdateDefinition<UserInfo> update = Builders<UserInfo>.Update.Inc("TimedActions", 1);
                 UserInfos.UpdateOneAsync(Builders<UserInfo>.Filter.Eq("_id", $"{user.Id}aaaaaa"), update);
             }
             else
