@@ -80,33 +80,55 @@ namespace EvaluationBot.Commands
         [Command("intro"), Alias("introduction"), Summary("Gets a user's introduction message. Syntax : !intro user")]
         private async Task GetIntro(IGuildUser user)
         {
-            var info = await DataBaseLoader.GetInfo(user);
-            if (info.IntroMessage == 0)
+            if(user.Id == Program._client.CurrentUser.Id)
             {
-                await ReplyAsync($"No intro for that user found.{user.Mention} send a message to <#{Program.PrivateSettings.IntrosChannel}> introducing yourself");
-                return;
-            }
-            IMessage message = await Program.IntrosChannel.GetMessageAsync(info.IntroMessage);
-            if (message == null)
-            {
-                await ReplyAsync($"Intro message for {user.Mention} seems to have been deleted. Try sending another message to <#{Program.PrivateSettings.IntrosChannel}>").DeleteAfterSeconds(20);
+                var builder = new EmbedBuilder()
+                       .WithColor(Color.LightOrange)
+                       .WithTitle($"Introduction for {Program._client.CurrentUser.Username}");
+                builder.Description = "I'm the server's bot. Type !help for my commands.";
+
+                var embed = builder.Build();
+
+                await ReplyAsync("", false, embed);
+
+                await Task.Delay(1000);
+
                 await Context.Message.DeleteAsync();
-                return;
             }
-            string messageLink = "https://discordapp.com/channels/" + Context.Guild.Id + "/" + Program.PrivateSettings.IntrosChannel.ToString() + "/" + info.IntroMessage;
-            var builder = new EmbedBuilder()
-                    .WithColor(Color.LightOrange)
-                    .WithTitle($"Introduction for {user.Username}")
-                    .WithUrl(messageLink);
-            builder.Description = message.Content;
+            if (user.IsBot)
+            {
+                await ReplyAsync("Introduction unavailable for bot");
+            }
+            else
+            {
+                var info = await DataBaseLoader.GetInfo(user);
+                if (info.IntroMessage == 0)
+                {
+                    await ReplyAsync($"No intro for that user found.{user.Mention} send a message to <#{Program.PrivateSettings.IntrosChannel}> introducing yourself");
+                    return;
+                }
+                IMessage message = await Program.IntrosChannel.GetMessageAsync(info.IntroMessage);
+                if (message == null)
+                {
+                    await ReplyAsync($"Intro message for {user.Mention} seems to have been deleted. Try sending another message to <#{Program.PrivateSettings.IntrosChannel}>").DeleteAfterSeconds(20);
+                    await Context.Message.DeleteAsync();
+                    return;
+                }
+                string messageLink = "https://discordapp.com/channels/" + Context.Guild.Id + "/" + Program.PrivateSettings.IntrosChannel.ToString() + "/" + info.IntroMessage;
+                var builder = new EmbedBuilder()
+                        .WithColor(Color.LightOrange)
+                        .WithTitle($"Introduction for {user.Username}")
+                        .WithUrl(messageLink);
+                builder.Description = message.Content;
 
-            var embed = builder.Build();
+                var embed = builder.Build();
 
-            await ReplyAsync("", false, embed);
+                await ReplyAsync("", false, embed);
 
-            await Task.Delay(1000);
+                await Task.Delay(1000);
 
-            await Context.Message.DeleteAsync();
+                await Context.Message.DeleteAsync(); 
+            }
         }
 
         [Command("coinflip"), Alias("flipcoin")]
@@ -138,9 +160,17 @@ namespace EvaluationBot.Commands
             EmbedBuilder embedBuilder = new EmbedBuilder();
             embedBuilder.WithColor(Color.Gold);
             embedBuilder.Title = user == null ? Context.User.Username : user.Username;
-            DataBaseLoader.UserInfo info = await DataBaseLoader.GetInfo(user ?? Context.User);
-            embedBuilder.AddField("Level: ", info.Level()).AddInlineField("Xp: ", info.Xp);
-            embedBuilder.AddField("Karma: ", info.Karma);
+            if (user != null && user.IsBot)
+            {
+                embedBuilder.AddField("Level: ", 99999).AddInlineField("Xp: ", 9999);
+                embedBuilder.AddField("Karma: ", 99999);
+            }
+            else
+            {
+                DataBaseLoader.UserInfo info = await DataBaseLoader.GetInfo(user ?? Context.User);
+                embedBuilder.AddField("Level: ", info.Level()).AddInlineField("Xp: ", info.Xp);
+                embedBuilder.AddField("Karma: ", info.Karma); 
+            }
             await ReplyAsync("", embed: embedBuilder.Build());
         }
         [Command("birthday"), Summary("Coming soon"/*"Shows the user's birthday. Syntax : !birthday user"*/)]
@@ -247,15 +277,33 @@ namespace EvaluationBot.Commands
             await Program.LogChannel.SendMessageAsync($"{Context.User.Mention} softbanned {user.Mention} for \"{reason}\"");
         }
 
+        [Command("purgedb")]
+        [RequireUserPermission(GuildPermission.KickMembers)]
+        public async Task PurgeDb(int days = 7)
+        {
+            if (Context.User.Id == 385164566658678784)
+            {
+                DataBaseLoader.PruneDatabase(TimeSpan.FromDays(days));
+                await Context.User.DM("Database purged");
+            }
+        }
+
         [Command("mute")]
         [Alias("stfu", "shutup", "hush", "silence")]
         [Summary("Mutes member for some time. Syntax: !mute @user time(seconds) reason")]
         [RequireUserPermission(GuildPermission.KickMembers)]
         public async Task MuteCommand(IGuildUser user, uint seconds, string reason = "Not specified")
         {
-            DataBaseLoader.AddWarning(user, $"\"{reason}\" {DateTime.UtcNow.ToString("g", CultureInfo.CreateSpecificCulture("en-US"))} (mute by {Context.User.Tag()})");
-            await Context.Message.DeleteAsync();
-            await Muting.Mute(user, seconds, reason, Context);
+            if (user.Id == Program._client.CurrentUser.Id)
+            {
+                await ReplyAsync("I'm unmutable :smiling_imp:");
+            }
+            else
+            {
+                DataBaseLoader.AddWarning(user, $"\"{reason}\" {DateTime.UtcNow.ToString("g", CultureInfo.CreateSpecificCulture("en-US"))} (mute by {Context.User.Tag()})");
+                await Context.Message.DeleteAsync();
+                await Muting.Mute(user, seconds, reason, Context); 
+            }
         }
 
         

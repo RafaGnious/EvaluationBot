@@ -20,12 +20,13 @@ public class Program
     public static SocketGuild Guild;
     public static PrivateSettings PrivateSettings;
 
-    private DiscordSocketClient _client;
+    public static DiscordSocketClient _client;
     static void Main(string[] args) => new Program().MainAsync().GetAwaiter().GetResult();
     private CommandService commandService;
     public static string Help;
     public static ISocketMessageChannel LogChannel;
     public static ISocketMessageChannel IntrosChannel;
+    public static ISocketMessageChannel CommandsChannel;
     static ISocketMessageChannel WelcomeChannel;
 
     public async Task MainAsync()
@@ -64,6 +65,7 @@ public class Program
         LogChannel = Guild.GetTextChannel(PrivateSettings.LogChannel);
         WelcomeChannel = Guild.GetTextChannel(PrivateSettings.WelcomeChannel);
         IntrosChannel = Guild.GetTextChannel(PrivateSettings.IntrosChannel);
+        CommandsChannel = Guild.GetTextChannel(PrivateSettings.CommandsChannel);
         DataBaseLoader.ReloadTimedActions();
         return Task.CompletedTask;
     }
@@ -78,9 +80,9 @@ public class Program
         _client.MessageUpdated += IntroductionsEdit;
         //_client.MessageDeleted += IntroductionDeleted;
 
-        _client.UserLeft += UserLeft;
+        _client.UserLeft += UserLeftAsync;
         _client.UserJoined += Welcome;
-        _client.UserJoined += CheckForMuteEvasion;
+        _client.UserJoined += CheckForMuteEvasionAsync;
 
         await commandService.AddModulesAsync(Assembly.GetEntryAssembly());
         StringBuilder commandList = new StringBuilder();
@@ -94,7 +96,11 @@ public class Program
 
 
 
-    private Task IntroductionsEdit(Cacheable<IMessage, ulong> arg1, SocketMessage arg2, ISocketMessageChannel arg3) => IntroductionsEditAsync(arg1, arg2, arg3);
+    private Task IntroductionsEdit(Cacheable<IMessage, ulong> arg1, SocketMessage arg2, ISocketMessageChannel arg3)
+    {
+        IntroductionsEditAsync(arg1, arg2, arg3);
+        return Task.CompletedTask;
+    }
 
     private async Task IntroductionsEditAsync(Cacheable<IMessage, ulong> arg1, SocketMessage arg2, ISocketMessageChannel arg3)
     {
@@ -107,7 +113,11 @@ public class Program
 
 
 
-    private Task Introductions(SocketMessage message) => IntroductionsAsync(message);
+    private Task Introductions(SocketMessage message)
+    {
+        IntroductionsAsync(message);
+        return Task.CompletedTask;
+    }
 
     async Task IntroductionsAsync(SocketMessage message)
     {
@@ -122,7 +132,11 @@ public class Program
 
     public HashSet<ulong> KarmaCooldowns = new HashSet<ulong>();
 
-    private Task XpHandler(SocketMessage messageParam) => XpHandlerAsync(messageParam);
+    private Task XpHandler(SocketMessage messageParam)
+    {
+        XpHandlerAsync(messageParam);
+        return Task.CompletedTask;
+    }
 
     private async Task XpHandlerAsync(SocketMessage messageParam)
     {
@@ -143,9 +157,11 @@ public class Program
         }
     }
 
-    private Task KarmaHandler(SocketMessage messageParam) =>
+    private Task KarmaHandler(SocketMessage messageParam)
+    {
         KarmaHandlerAsync(messageParam);
-
+        return Task.CompletedTask;
+    }
     private async Task KarmaHandlerAsync(SocketMessage messageParam)
     {
         if (!messageParam.Author.IsBot && messageParam.MentionedUsers.Count > 0)
@@ -158,14 +174,18 @@ public class Program
                 {
                     await messageParam.Channel.SendMessageAsync(":expressionless:").DeleteAfterSeconds(30);
                 }
-                else if (!KarmaCooldowns.Contains(messageParam.Author.Id))
+                else if (KarmaCooldowns.Contains(messageParam.Author.Id))
                 {
                     await messageParam.Channel.SendMessageAsync($"You have to wait {PrivateSettings.KarmaCooldown / 1000} seconds before giving another karma.");
                 }
                 else
                 {
-
-                    if (users.Any(x => x.IsBot)) return;
+                    users.RemoveAll(x => x.IsBot);
+                    if (users.Count == 0)
+                    {
+                        await messageParam.Channel.SendMessageAsync("Bots need no Karma...").DeleteAfterSeconds(20);
+                        return;
+                    }
                     KarmaCooldowns.Add(messageParam.Author.Id);
                     DataBaseLoader.AddKarma(users, 1);
                     StringBuilder builder = new StringBuilder();
@@ -180,14 +200,18 @@ public class Program
                     if (users.Count > 1) builder.Append($" and {users[users.Count - 1]}");
                     builder.Append(".");
                     await messageParam.Channel.SendMessageAsync(builder.ToString()).DeleteAfterSeconds(20);
-                    await Task.Delay(PrivateSettings.KarmaCooldown - 20000);
+                    await Task.Delay(PrivateSettings.KarmaCooldown);
                     KarmaCooldowns.Remove(messageParam.Author.Id);
                 }
             }
         }
     }
 
-    Task UserLeft(SocketGuildUser arg) => UserLeftAsync(arg);
+    Task UserLeft(SocketGuildUser arg)
+    {
+        UserLeftAsync(arg);
+        return Task.CompletedTask;
+    }
 
     private async Task UserLeftAsync(SocketGuildUser user)
     {
@@ -198,7 +222,11 @@ public class Program
     public async Task Welcome(SocketGuildUser user) =>
         await WelcomeChannel.SendMessageAsync(string.Format(PrivateSettings.WelcomeString, user.Mention));
 
-    public Task CheckForMuteEvasion(SocketGuildUser user) => CheckForMuteEvasionAsync(user);
+    public Task CheckForMuteEvasion(SocketGuildUser user)
+    {
+        CheckForMuteEvasionAsync(user);
+        return Task.CompletedTask;
+    }
 
     public async Task CheckForMuteEvasionAsync(SocketGuildUser user)
     {
@@ -211,7 +239,11 @@ public class Program
         }
     }
 
-    public Task HandleCommand(SocketMessage messageParam) => HandleCommandAsync(messageParam);
+    public Task HandleCommand(SocketMessage messageParam)
+    {
+        HandleCommandAsync(messageParam);
+        return Task.CompletedTask;
+    }
 
     public async Task HandleCommandAsync(SocketMessage messageParam)
     {
