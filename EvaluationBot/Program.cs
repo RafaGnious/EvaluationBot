@@ -58,16 +58,23 @@ public class Program
         await Task.Delay(-1);
     }
 
+    static bool Initialized = false;
+
     private Task _client_Ready()
     {
-        Guild = _client.GetGuild(PrivateSettings.ServerId);
+        if (!Initialized)
+        {
+            Guild = _client.GetGuild(PrivateSettings.ServerId);
 
-        LogChannel = Guild.GetTextChannel(PrivateSettings.LogChannel);
-        WelcomeChannel = Guild.GetTextChannel(PrivateSettings.WelcomeChannel);
-        IntrosChannel = Guild.GetTextChannel(PrivateSettings.IntrosChannel);
-        CommandsChannel = Guild.GetTextChannel(PrivateSettings.CommandsChannel);
-        DataBaseLoader.ReloadTimedActions();
-        return Task.CompletedTask;
+            LogChannel = Guild.GetTextChannel(PrivateSettings.LogChannel);
+            WelcomeChannel = Guild.GetTextChannel(PrivateSettings.WelcomeChannel);
+            IntrosChannel = Guild.GetTextChannel(PrivateSettings.IntrosChannel);
+            CommandsChannel = Guild.GetTextChannel(PrivateSettings.CommandsChannel);
+            DataBaseLoader.ReloadTimedActions();
+            Initialized = true;
+            
+        }
+        return Task.CompletedTask; 
     }
 
     public async Task InstallCommands()
@@ -78,7 +85,6 @@ public class Program
         _client.MessageReceived += KarmaHandler;
         _client.MessageReceived += Introductions;
         _client.MessageUpdated += IntroductionsEdit;
-        //_client.MessageDeleted += IntroductionDeleted;
 
         _client.UserLeft += UserLeftAsync;
         _client.UserJoined += Welcome;

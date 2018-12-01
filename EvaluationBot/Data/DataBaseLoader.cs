@@ -28,8 +28,8 @@ namespace EvaluationBot.Data
             }
 
             IMongoDatabase db = client.GetDatabase("admin");
-            UserInfos = db.GetCollection<UserInfo>("test");
-            TimedActions = db.GetCollection<TimedAction>("TimedActions");
+            UserInfos = db.GetCollection<UserInfo>(Program.PrivateSettings.UserCollection);
+            TimedActions = db.GetCollection<TimedAction>(Program.PrivateSettings.TimedActionsCollection);
 
             PruneDatabase();
         }

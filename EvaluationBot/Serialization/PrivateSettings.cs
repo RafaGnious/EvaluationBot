@@ -19,5 +19,7 @@ namespace EvaluationBot.Serialization
         public string[] KarmaTriggers { get; set; }
         public int KarmaCooldown { get; set; }
         public ulong CommandsChannel { get; set; }
+        public string UserCollection { get; set; }
+        public string TimedActionsCollection { get; set; }
     }
 }
