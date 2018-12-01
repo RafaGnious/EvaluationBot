@@ -143,22 +143,23 @@ namespace EvaluationBot.Commands
             embedBuilder.AddField("Karma: ", info.Karma);
             await ReplyAsync("", embed: embedBuilder.Build());
         }
-        [Command("birthday"), Summary("Shows the user's birthday. Syntax : !birthday user")]
+        [Command("birthday"), Summary("Coming soon"/*"Shows the user's birthday. Syntax : !birthday user"*/)]
         [Alias("bday")]
         private async Task Birthday(IGuildUser user)
         {
-            DateTime date = (await DataBaseLoader.GetInfo(user)).Birthday;
-            if (date != default(DateTime)) await ReplyAsync($"{user.Nickname}'s birthday is at {date.ToLongDateString()}");
-            else await ReplyAsync($"{user.Nickname} didn't register his birthday in the database. He can do so by using the command !setbirthday DD-MM-YYYY");
+            await ReplyAsync("Coming soon");
+            //DateTime date = (await DataBaseLoader.GetInfo(user)).Birthday;
+            //if (date != default(DateTime)) await ReplyAsync($"{user.Nickname}'s birthday is at {date.ToLongDateString()}");
+            //else await ReplyAsync($"{user.Nickname} didn't register his birthday in the database. He can do so by using the command !setbirthday DD-MM-YYYY");
         }
 
-        [Command("setbirthday"), Summary("Sets your birthday. Syntax : !birthday DD-MM-YYYY")]
+        [Command("setbirthday"), Summary("Coming soon"/*"Sets your birthday. Syntax : !birthday DD-MM-YYYY"*/)]
         [Alias("setbday")]
         private async Task SetBirthday(string date)
         {
-
-            DataBaseLoader.SetBirthday(Context.User, new DateTime(2001, 7, 30)/*DateTime.ParseExact(date, "dd-MM-yy", CultureInfo.InvariantCulture)*/);
-            await ReplyAsync("Done!").DeleteAfterSeconds(30);
+            await ReplyAsync("Coming soon");
+            //DataBaseLoader.SetBirthday(Context.User, new DateTime(2001, 7, 30)/*DateTime.ParseExact(date, "dd-MM-yy", CultureInfo.InvariantCulture)*/);
+            //await ReplyAsync("Done!").DeleteAfterSeconds(30);
         }
 
         [Command("warn"), Summary("Warns said user that his behaviour wasn't appropriate. Syntax: !warn user reason")]
