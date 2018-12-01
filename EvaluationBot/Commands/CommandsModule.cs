@@ -94,6 +94,7 @@ namespace EvaluationBot.Commands
                 await Task.Delay(1000);
 
                 await Context.Message.DeleteAsync();
+                return;
             }
             if (user.IsBot)
             {
