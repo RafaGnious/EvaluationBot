@@ -13,13 +13,13 @@ namespace EvaluationBot.Commands
     public class CommandsModule : ModuleBase
     {
         [Command("help")]
-        [Summary("Shows commands and descriptions. Syntax: !help")]
+        [Summary("Shows commands and their descriptions. Syntax: ``!help``")]
         public async Task Help()
         {
             await ReplyAsync(Program.Help);
         }
 
-        [Command("ping"), Summary("Display bot ping. Syntax : !ping")]
+        [Command("ping"), Summary("Display the bots ping. Syntax : ``!ping``")]
         [Alias("pong")]
         private async Task Ping()
 
@@ -32,7 +32,8 @@ namespace EvaluationBot.Commands
             await Context.Message.DeleteAfterTime(minutes: 3);
 
         }
-        [Command("quote"), Summary("Quote a message. Syntax : !quote messageid (optional subtitle) (#channelname)")]
+        
+        [Command("quote"), Summary("Quote a users message. Syntax: ``!quote messageid (Subtitle) (#Channel Name)``")]
         private async Task QuoteMessage(ulong id, string subtitle = null, IMessageChannel channel = null)
         {
             // If channel is null use Context.Channel, else use the provided channel
@@ -77,7 +78,7 @@ namespace EvaluationBot.Commands
 
         }
 
-        [Command("intro"), Alias("introduction"), Summary("Gets a user's introduction message. Syntax : !intro user")]
+        [Command("intro"), Alias("introduction"), Summary("Gets a user's introduction message. Syntax: ``!intro (user)``")]
         private async Task GetIntro(IGuildUser user)
         {
             if(user.Id == Program._client.CurrentUser.Id)
@@ -96,6 +97,7 @@ namespace EvaluationBot.Commands
                 await Context.Message.DeleteAsync();
                 return;
             }
+            
             if (user.IsBot)
             {
                 await ReplyAsync("Introduction unavailable for bot");
@@ -133,7 +135,7 @@ namespace EvaluationBot.Commands
         }
 
         [Command("coinflip"), Alias("flipcoin")]
-        [Summary("Returns either Tails or Heads. Syntax: !coinflip")]
+        [Summary("Flips a coin! Heads or tails? Syntax: ``!coinflip``")]
         public async Task CoinFlip()
         {
             switch (new Random().Next() % 2)
@@ -149,13 +151,13 @@ namespace EvaluationBot.Commands
         }
 
         [Command("random")]
-        [Summary("Returns an integer between 1 and the specified number. Syntax: !random max(exclusive) min(optional-inclusive)")]
+        [Summary("Returns an integer between 1 and the specified number. Syntax: ``!random (maximum exclusive) (optional minimum inclusive)``")]
         public async Task Random(int max, int min = 1)
         {
             await ReplyAsync(((new Random().Next() % max) + min).ToString());
         }
 
-        [Command("profile"), Summary("Shows the user's data. Syntax : !profile")]
+        [Command("profile"), Summary("Shows a user's profile. Syntax : ``!profile (optional user)``")]
         private async Task Profile(IUser user = null)
         {
             EmbedBuilder embedBuilder = new EmbedBuilder();
@@ -174,7 +176,8 @@ namespace EvaluationBot.Commands
             }
             await ReplyAsync("", embed: embedBuilder.Build());
         }
-        [Command("birthday"), Summary("Coming soon"/*"Shows the user's birthday. Syntax : !birthday user"*/)]
+        
+        [Command("birthday"), Summary("Coming soon... Syntax: ``!birthday (optional user)``"/*"Shows the user's birthday. "*/)]
         [Alias("bday")]
         private async Task Birthday(IGuildUser user)
         {
@@ -184,16 +187,16 @@ namespace EvaluationBot.Commands
             //else await ReplyAsync($"{user.Nickname} didn't register his birthday in the database. He can do so by using the command !setbirthday DD-MM-YYYY");
         }
 
-        [Command("setbirthday"), Summary("Coming soon"/*"Sets your birthday. Syntax : !birthday DD-MM-YYYY"*/)]
+        [Command("setbirthday"), Summary("Coming soon... Syntax: ``!birthday DD-MM-YYYY``"/*"Sets your birthday."*/)]
         [Alias("setbday")]
         private async Task SetBirthday(string date)
         {
-            await ReplyAsync("Coming soon");
+            await ReplyAsync("Coming soon...");
             //DataBaseLoader.SetBirthday(Context.User, new DateTime(2001, 7, 30)/*DateTime.ParseExact(date, "dd-MM-yy", CultureInfo.InvariantCulture)*/);
             //await ReplyAsync("Done!").DeleteAfterSeconds(30);
         }
 
-        [Command("warn"), Summary("Warns said user that his behaviour wasn't appropriate. Syntax: !warn user reason")]
+        [Command("warn"), Summary("Warns a given user that their behaviour wasn't appropriate. Syntax: ``!warn (user) (reason)``")]
         [Alias("badboy")]
         [RequireUserPermission(GuildPermission.KickMembers)]
         public async Task Warn(IGuildUser user, string reason)
@@ -204,7 +207,7 @@ namespace EvaluationBot.Commands
             await ReplyAsync($"**{user.Mention} {reason}** \n Persisting with this behaviour will get you muted and eventually banned.");
         }
 
-        [Command("warnings"), Summary("Gets all warnings to the specified user. Syntax: !warnings user ")]
+        [Command("warnings"), Summary("Gets all warnings for the specified user. Syntax: ``!warnings (user)``")]
         [RequireUserPermission(GuildPermission.KickMembers)]
         public async Task WarningList(IGuildUser user)
         {
@@ -218,7 +221,7 @@ namespace EvaluationBot.Commands
             await ReplyAsync(builder.ToString());
         }
 
-        [Command("clearwarnings"), Summary("Gets all warnings to the specified user. Syntax: !warnings user ")]
+        [Command("clearwarnings"), Summary("Gets all warnings for the specified user. Syntax: ``!clearwarnings (user)``")]
         [RequireUserPermission(GuildPermission.KickMembers)]
         public async Task ClearWarnings(IGuildUser user)
         {
@@ -226,7 +229,7 @@ namespace EvaluationBot.Commands
             await ReplyAsync("Warnings cleared");
         }
 
-        [Command("removewarning"), Summary("Gets all warnings to the specified user. Syntax: !warnings user ")]
+        [Command("removewarning"), Summary("Removes a warning from the specified user. Syntax: !removewarning (user) (index)")]
         [Alias("deletewarning")]
         [RequireUserPermission(GuildPermission.KickMembers)]
         public async Task RemoveWarnings(IGuildUser user, int index)
@@ -236,7 +239,7 @@ namespace EvaluationBot.Commands
         }
 
         [Command("kick")]
-        [Summary("Kicks member. Syntax: !kick @user")]
+        [Summary("Kicks a specified member. Syntax: ``!kick (user)``")]
         [RequireUserPermission(GuildPermission.KickMembers)]
         [Alias("bye")]
         public async Task Kick(IGuildUser user, string reason)
@@ -247,7 +250,7 @@ namespace EvaluationBot.Commands
         }
 
         [Command("ban")]
-        [Summary("Bans member. Syntax: !ban @user reason deleteMessages(true/false)")]
+        [Summary("Bans a given member. Syntax: ``!ban (user) (reason) (delete messages, true/false)``")]
         [RequireUserPermission(GuildPermission.BanMembers)]
         public async Task Ban(IGuildUser user, string reason, bool purgeMessages = true)
         {
@@ -258,7 +261,7 @@ namespace EvaluationBot.Commands
         }
 
         [Command("unban")]
-        [Summary("Unbans member. Syntax: !unban @user")]
+        [Summary("Unbans a given member member. Syntax: ``!unban (user)``")]
         [RequireUserPermission(GuildPermission.BanMembers)]
         public async Task Unban(IGuildUser user)
         {
@@ -268,7 +271,7 @@ namespace EvaluationBot.Commands
         }
 
         [Command("softban")]
-        [Summary("Bans and unbans member, deleting messages. Syntax: !softban @user reason")]
+        [Summary("Bans, and then unbans a member, deleting messages. Syntax: ``!softban (user) (reason)``")]
         [RequireUserPermission(GuildPermission.KickMembers)]
         public async Task SoftBan(IGuildUser user, string reason)
         {
@@ -280,6 +283,7 @@ namespace EvaluationBot.Commands
 
         [Command("purgedb")]
         [RequireUserPermission(GuildPermission.KickMembers)]
+        [Summary("Purges the database. You must be the bot owner to run this! Syntax: ``!purgedb (days to purge)``")]
         public async Task PurgeDb(int days = 7)
         {
             if (Context.User.Id == 385164566658678784)
@@ -291,7 +295,7 @@ namespace EvaluationBot.Commands
 
         [Command("mute")]
         [Alias("stfu", "shutup", "hush", "silence")]
-        [Summary("Mutes member for some time. Syntax: !mute @user time(seconds) reason")]
+        [Summary("Mutes a given member for some time. Syntax: ``!mute (user) (time in seconds) (reason)``")]
         [RequireUserPermission(GuildPermission.KickMembers)]
         public async Task MuteCommand(IGuildUser user, uint seconds, string reason = "Not specified")
         {
@@ -310,7 +314,7 @@ namespace EvaluationBot.Commands
         
 
         [Command("clear")]
-        [Summary("Clears an amount of messages Syntax: !clear amount")]
+        [Summary("Clears a given amount of messages Syntax: ``!clear (amount)``")]
         [RequireUserPermission(GuildPermission.KickMembers)]
         public async Task Clear(int amount)
         {
@@ -326,8 +330,9 @@ namespace EvaluationBot.Commands
             await channel.DeleteMessagesAsync(messages);
             await ReplyAsync($"{messages.Count} messages deleted.");
         }
+        
         [Command("clear")]
-        [Summary("Clears messages until Syntax: !clear messageId")]
+        [Summary("Clears messages up to a given message. Syntax: ``!clear (message id)``")]
         [RequireUserPermission(GuildPermission.KickMembers)]
         public async Task Clear(ulong id)
         {
@@ -342,7 +347,7 @@ namespace EvaluationBot.Commands
         }
 
         [Command("addrole")]
-        [Summary("Adds specified role to the user requesting. Syntax: !addrole rolename")]
+        [Summary("Adds a given role to the user requesting. Syntax: ``!addrole (rolename)``")]
         public async Task AddRole(IRole role)
         {
             if (role.Permissions.BanMembers || role.Permissions.KickMembers)
@@ -364,8 +369,9 @@ namespace EvaluationBot.Commands
                 }
             }
         }
+        
         [Command("removerole")]
-        [Summary("Removes specified role from the user requesting. Syntax: !removerole rolename")]
+        [Summary("Removes a given role from the user requesting. Syntax: ``!removerole (rolename)``")]
         public async Task RemoveRole(IRole role)
         {
             if (role.Permissions.BanMembers || role.Permissions.KickMembers)
@@ -389,7 +395,7 @@ namespace EvaluationBot.Commands
         }
 
         [Command("unmute")]
-        [Summary("Unmutes member. Syntax: !unmute @user")]
+        [Summary("Unmutes a given member. Syntax: ``!unmute (user)``")]
         [RequireUserPermission(GuildPermission.KickMembers)]
         public async Task UnmuteCommand(IGuildUser user) => await Muting.Unmute(user);
 
