@@ -6,93 +6,120 @@ using System.Threading.Tasks;
 using System.Linq;
 using Discord;
 using EvaluationBot.Data;
+using EvaluationBot.CommandServices;
 using System.Globalization;
 
 namespace EvaluationBot.Commands
 {
     public class CommandsModule : ModuleBase
     {
+        private Services services;
+
+        public CommandsModule(Services services)
+        {
+            this.services = services;
+        }
+
         [Command("help")]
+        [Alias("commands")]
         [Summary("Shows commands and their descriptions. Syntax: ``!help``")]
         public async Task Help()
         {
             await ReplyAsync(Program.Help);
         }
 
-        [Command("ping"), Summary("Display the bots ping. Syntax : ``!ping``")]
+        [Command("ping")]
         [Alias("pong")]
+        [Summary("Display the bots ping. Syntax: ``!ping``")]
         private async Task Ping()
-
         {
+            //Reply immediatly and wait for message to send.
+            IUserMessage message = await ReplyAsync($"Pong :blush:");
 
-            var message = await ReplyAsync($"Pong :blush:");
-            var time = message.Timestamp.Subtract(Context.Message.Timestamp);
+            //Get the time since the user sent their message, and use it to find the delay.
+            TimeSpan time = message.Timestamp.Subtract(Context.Message.Timestamp);
+
+            //Modify the previous message to include the delay.
             await message.ModifyAsync(m => m.Content = $"Pong :blush: (**{time.TotalMilliseconds}** *ms*)");
+
+            //Delete after 3 minutes
             await message.DeleteAfterTime(minutes: 3);
             await Context.Message.DeleteAfterTime(minutes: 3);
-
         }
         
-        [Command("quote"), Summary("Quote a users message. Syntax: ``!quote messageid (Subtitle) (#Channel Name)``")]
+        [Command("quote")]
+        [Summary("Quote a users message. Syntax: ``!quote messageid (optional subtitle) (optional channel Name)``")]
         private async Task QuoteMessage(ulong id, string subtitle = null, IMessageChannel channel = null)
         {
-            // If channel is null use Context.Channel, else use the provided channel
+            //If the channel is null, use the message context's channel.
             channel = channel ?? Context.Channel;
 
+            //Find the message that was requested and make a link.
+            IMessage message = await channel.GetMessageAsync(id);
+            string messageLink = "https://discordapp.com/channels/" + Context.Guild.Id + "/" 
+                + (channel == null ? Context.Channel.Id : channel.Id) + "/" + id;
 
-            var message = await channel.GetMessageAsync(id);
-            string messageLink = "https://discordapp.com/channels/" + Context.Guild.Id + "/" + (channel == null
-                                     ? Context.Channel.Id
-                                     : channel.Id) + "/" + id;
+            //Build an embed which contains the quote
+            EmbedBuilder builder = new EmbedBuilder()
+            {
+                Color = new Color(200, 128, 128),
+                Timestamp = message.Timestamp,
 
-
-            var builder = new EmbedBuilder()
-                .WithColor(new Color(200, 128, 128))
-                .WithTimestamp(message.Timestamp)
-                .WithFooter(footer =>
+                Footer = new EmbedFooterBuilder()
                 {
-                    footer
-                        .WithText($"In channel {message.Channel.Name}");
-                })
-                .WithTitle("Linkback")
-                .WithUrl(messageLink)
-                .WithAuthor(author =>
+                    Text = $"In channel {message.Channel.Name}"
+                },
+
+                Title = new EmbedBuilder()
                 {
-                    author
-                        .WithName(message.Author.Username)
-                        .WithIconUrl(message.Author.GetAvatarUrl());
-                })
-                .AddField("Original message", message.Content.Truncate(1020));
+                    Title = "Linkback",
+                    Url = messageLink
+                }.ToString(),
+
+                Author = new EmbedAuthorBuilder()
+                {
+                    Name = message.Author.Username,
+                    IconUrl = message.Author.GetAvatarUrl()
+                }
+            };
+
+            //Add the original message
+            builder.AddField("Original Message:", message.Content.Truncate(1024));
+
+            //Add a subtitle if one was given
+            string subtitleText = null;
             if (subtitle != null)
             {
+                subtitleText = $"{Context.User.Username}: {subtitle}";
                 builder.AddField($"{Context.User.Username}: ", subtitle);
             }
 
-            var embed = builder.Build();
+            //Build, and send the embed in a message.
+            Embed embed = builder.Build();
+            await ReplyAsync(subtitleText, false, embed);
 
-            await ReplyAsync((subtitle == null) ? "" : $"*{Context.User.Username}:* {subtitle}", false, embed);
-
-            await Task.Delay(1000);
-
+            //Delete the requesters command
             await Context.Message.DeleteAsync();
-
         }
 
-        [Command("intro"), Alias("introduction"), Summary("Gets a user's introduction message. Syntax: ``!intro (user)``")]
+        [Command("intro")]
+        [Alias("introduction")]
+        [Summary("Gets a user's introduction message. Syntax: ``!intro (user)``")]
         private async Task GetIntro(IGuildUser user)
         {
-            if(user.Id == Program._client.CurrentUser.Id)
+            if(user.Id == Program.Client.CurrentUser.Id)
             {
-                var builder = new EmbedBuilder()
-                       .WithColor(Color.LightOrange)
-                       .WithTitle($"Introduction for {Program._client.CurrentUser.Username}");
-                builder.Description = "I'm the server's bot. Type !help for my commands.";
+                EmbedBuilder builder = new EmbedBuilder()
+                {
+                    Color = Color.LightOrange,
+                    Title = $"Introduction for {user.Username}"
+                };
 
-                var embed = builder.Build();
+                builder.Description = "I'm the Evaluation Station server's personal assistant! Type ``!help`` to get an idea of what I can do.";
 
-                await ReplyAsync("", false, embed);
+                Embed embed = builder.Build();
 
-                await Task.Delay(1000);
+                await ReplyAsync(null, false, embed);
 
                 await Context.Message.DeleteAsync();
                 return;
@@ -104,7 +131,7 @@ namespace EvaluationBot.Commands
             }
             else
             {
-                var info = await DataBaseLoader.GetInfo(user);
+                var info = await services.databaseLoader.GetInfo(user);
                 if (info.IntroMessage == 0)
                 {
                     await ReplyAsync($"No intro for that user found.{user.Mention} send a message to <#{Program.PrivateSettings.IntrosChannel}> introducing yourself");
@@ -134,30 +161,26 @@ namespace EvaluationBot.Commands
             }
         }
 
-        [Command("coinflip"), Alias("flipcoin")]
+        [Command("coinflip")]
+        [Alias("flipcoin")]
         [Summary("Flips a coin! Heads or tails? Syntax: ``!coinflip``")]
         public async Task CoinFlip()
         {
-            switch (new Random().Next() % 2)
-            {
-                case 1:
-                    await ReplyAsync("Tails");
-                    break;
-                default:
-                    await ReplyAsync("Heads");
-                    break;
+            string side = services.random.Next(0, 2) == 0 ? "Tails!" : "Heads!";
 
-            }
+            await ReplyAsync(side);
         }
 
         [Command("random")]
+        [Alias("rand")]
         [Summary("Returns an integer between 1 and the specified number. Syntax: ``!random (maximum exclusive) (optional minimum inclusive)``")]
         public async Task Random(int max, int min = 1)
         {
             await ReplyAsync(((new Random().Next() % max) + min).ToString());
         }
 
-        [Command("profile"), Summary("Shows a user's profile. Syntax : ``!profile (optional user)``")]
+        [Command("profile")]
+        [Summary("Shows a user's profile. Syntax: ``!profile (optional user)``")]
         private async Task Profile(IUser user = null)
         {
             EmbedBuilder embedBuilder = new EmbedBuilder();
@@ -165,240 +188,37 @@ namespace EvaluationBot.Commands
             embedBuilder.Title = user == null ? Context.User.Username : user.Username;
             if (user != null && user.IsBot)
             {
-                embedBuilder.AddField("Level: ", 99999).AddInlineField("Xp: ", 9999);
-                embedBuilder.AddField("Karma: ", 99999);
+                embedBuilder.AddField("Level: ", int.MaxValue).AddInlineField("Xp: ", int.MaxValue);
+                embedBuilder.AddField("Karma: ", int.MaxValue);
             }
             else
             {
-                DataBaseLoader.UserInfo info = await DataBaseLoader.GetInfo(user ?? Context.User);
+                DataBaseLoader.UserInfo info = await services.databaseLoader.GetInfo(user ?? Context.User);
                 embedBuilder.AddField("Level: ", info.Level()).AddInlineField("Xp: ", info.Xp);
                 embedBuilder.AddField("Karma: ", info.Karma); 
             }
             await ReplyAsync("", embed: embedBuilder.Build());
         }
         
-        [Command("birthday"), Summary("Coming soon... Syntax: ``!birthday (optional user)``"/*"Shows the user's birthday. "*/)]
+        [Command("birthday")]
         [Alias("bday")]
+        [Summary("Coming soon... Syntax: ``!birthday (optional user)``"/*"Shows the user's birthday. "*/)]
         private async Task Birthday(IGuildUser user)
         {
-            await ReplyAsync("Coming soon");
+            await ReplyAsync("Coming soon...");
             //DateTime date = (await DataBaseLoader.GetInfo(user)).Birthday;
             //if (date != default(DateTime)) await ReplyAsync($"{user.Nickname}'s birthday is at {date.ToLongDateString()}");
             //else await ReplyAsync($"{user.Nickname} didn't register his birthday in the database. He can do so by using the command !setbirthday DD-MM-YYYY");
         }
 
-        [Command("setbirthday"), Summary("Coming soon... Syntax: ``!birthday DD-MM-YYYY``"/*"Sets your birthday."*/)]
+        [Command("setbirthday")]
         [Alias("setbday")]
+        [Summary("Coming soon... Syntax: ``!birthday DD-MM-YYYY``"/*"Sets your birthday."*/)]
         private async Task SetBirthday(string date)
         {
             await ReplyAsync("Coming soon...");
             //DataBaseLoader.SetBirthday(Context.User, new DateTime(2001, 7, 30)/*DateTime.ParseExact(date, "dd-MM-yy", CultureInfo.InvariantCulture)*/);
             //await ReplyAsync("Done!").DeleteAfterSeconds(30);
         }
-
-        [Command("warn"), Summary("Warns a given user that their behaviour wasn't appropriate. Syntax: ``!warn (user) (reason)``")]
-        [Alias("badboy")]
-        [RequireUserPermission(GuildPermission.KickMembers)]
-        public async Task Warn(IGuildUser user, string reason)
-        {
-            await Context.Message.DeleteAsync();
-            DataBaseLoader.AddWarning(user, $"\"{reason}\" {DateTime.UtcNow.ToString("g", CultureInfo.CreateSpecificCulture("en-US"))} (warning by {Context.User.Tag()})");
-            await Program.LogChannel.SendMessageAsync($"{Context.User.Mention} warned {user.Mention} that \"{reason}\"");
-            await ReplyAsync($"**{user.Mention} {reason}** \n Persisting with this behaviour will get you muted and eventually banned.");
-        }
-
-        [Command("warnings"), Summary("Gets all warnings for the specified user. Syntax: ``!warnings (user)``")]
-        [RequireUserPermission(GuildPermission.KickMembers)]
-        public async Task WarningList(IGuildUser user)
-        {
-            var info = await DataBaseLoader.GetInfo(user);
-            StringBuilder builder = new StringBuilder();
-            builder.Append($"Warnings for {user.Tag()} (Count: {info.Warnings.Length}): \n");
-            for (int i = 0; i < info.Warnings.Length; i++)
-            {
-                builder.Append($"{i}: {info.Warnings[i]} \n");
-            }
-            await ReplyAsync(builder.ToString());
-        }
-
-        [Command("clearwarnings"), Summary("Gets all warnings for the specified user. Syntax: ``!clearwarnings (user)``")]
-        [RequireUserPermission(GuildPermission.KickMembers)]
-        public async Task ClearWarnings(IGuildUser user)
-        {
-            DataBaseLoader.ClearWarnings(user);
-            await ReplyAsync("Warnings cleared");
-        }
-
-        [Command("removewarning"), Summary("Removes a warning from the specified user. Syntax: !removewarning (user) (index)")]
-        [Alias("deletewarning")]
-        [RequireUserPermission(GuildPermission.KickMembers)]
-        public async Task RemoveWarnings(IGuildUser user, int index)
-        {
-            DataBaseLoader.RemoveWarning(user, index);
-            await ReplyAsync("Warning removed");
-        }
-
-        [Command("kick")]
-        [Summary("Kicks a specified member. Syntax: ``!kick (user)``")]
-        [RequireUserPermission(GuildPermission.KickMembers)]
-        [Alias("bye")]
-        public async Task Kick(IGuildUser user, string reason)
-        {
-            await Context.Message.DeleteAsync();
-            await user.KickAsync(reason);
-            await Program.LogChannel.SendMessageAsync($"{Context.User.Mention} kicked {user.Mention} for \"{reason}\"");
-        }
-
-        [Command("ban")]
-        [Summary("Bans a given member. Syntax: ``!ban (user) (reason) (delete messages, true/false)``")]
-        [RequireUserPermission(GuildPermission.BanMembers)]
-        public async Task Ban(IGuildUser user, string reason, bool purgeMessages = true)
-        {
-            await Context.Message.DeleteAsync();
-            if (purgeMessages) await user.Guild.AddBanAsync(user, 7, reason: reason);
-            else await user.Guild.AddBanAsync(user, reason: reason);
-            await Program.LogChannel.SendMessageAsync($"{Context.User.Mention} banned {user.Mention} for \"{reason}\"");
-        }
-
-        [Command("unban")]
-        [Summary("Unbans a given member member. Syntax: ``!unban (user)``")]
-        [RequireUserPermission(GuildPermission.BanMembers)]
-        public async Task Unban(IGuildUser user)
-        {
-            await user.Guild.RemoveBanAsync(user);
-            await ReplyAsync("User unbanned").DeleteAfterTime(minutes: 3);
-            await Program.LogChannel.SendMessageAsync($"{Context.User.Mention} unbanned \"{user.Mention}\"");
-        }
-
-        [Command("softban")]
-        [Summary("Bans, and then unbans a member, deleting messages. Syntax: ``!softban (user) (reason)``")]
-        [RequireUserPermission(GuildPermission.KickMembers)]
-        public async Task SoftBan(IGuildUser user, string reason)
-        {
-            await Context.Message.DeleteAsync();
-            await user.Guild.AddBanAsync(user, reason: reason);
-            await user.Guild.RemoveBanAsync(user);
-            await Program.LogChannel.SendMessageAsync($"{Context.User.Mention} softbanned {user.Mention} for \"{reason}\"");
-        }
-
-        [Command("purgedb")]
-        [RequireUserPermission(GuildPermission.KickMembers)]
-        [Summary("Purges the database. You must be the bot owner to run this! Syntax: ``!purgedb (days to purge)``")]
-        public async Task PurgeDb(int days = 7)
-        {
-            if (Context.User.Id == 385164566658678784)
-            {
-                DataBaseLoader.PruneDatabase(TimeSpan.FromDays(days));
-                await Context.User.DM("Database purged");
-            }
-        }
-
-        [Command("mute")]
-        [Alias("stfu", "shutup", "hush", "silence")]
-        [Summary("Mutes a given member for some time. Syntax: ``!mute (user) (time in seconds) (reason)``")]
-        [RequireUserPermission(GuildPermission.KickMembers)]
-        public async Task MuteCommand(IGuildUser user, uint seconds, string reason = "Not specified")
-        {
-            if (user.Id == Program._client.CurrentUser.Id)
-            {
-                await ReplyAsync("I'm unmutable :smiling_imp:");
-            }
-            else
-            {
-                DataBaseLoader.AddWarning(user, $"\"{reason}\" {DateTime.UtcNow.ToString("g", CultureInfo.CreateSpecificCulture("en-US"))} (mute by {Context.User.Tag()})");
-                await Context.Message.DeleteAsync();
-                await Muting.Mute(user, seconds, reason, Context); 
-            }
-        }
-
-        
-
-        [Command("clear")]
-        [Summary("Clears a given amount of messages Syntax: ``!clear (amount)``")]
-        [RequireUserPermission(GuildPermission.KickMembers)]
-        public async Task Clear(int amount)
-        {
-            if (amount < 1)
-            {
-                await ReplyAsync("cant delete less than one message").DeleteAfterSeconds(15);
-                return;
-            }
-            await Context.Message.DeleteAsync();
-            IMessageChannel channel = Context.Channel;
-            List<IMessage> messages = (await channel.GetMessagesAsync(amount).Flatten()).ToList();
-            messages.RemoveAll(x => x.Timestamp.Day > 14);
-            await channel.DeleteMessagesAsync(messages);
-            await ReplyAsync($"{messages.Count} messages deleted.");
-        }
-        
-        [Command("clear")]
-        [Summary("Clears messages up to a given message. Syntax: ``!clear (message id)``")]
-        [RequireUserPermission(GuildPermission.KickMembers)]
-        public async Task Clear(ulong id)
-        {
-
-            await Context.Message.DeleteAsync();
-            IMessageChannel channel = Context.Channel;
-            List<IMessage> messages = (await channel.GetMessagesAsync(id, Direction.After).Flatten()).ToList();
-            await channel.DeleteMessagesAsync(messages);
-            await ReplyAsync($"{messages.Count} messages deleted.");
-
-
-        }
-
-        [Command("addrole")]
-        [Summary("Adds a given role to the user requesting. Syntax: ``!addrole (rolename)``")]
-        public async Task AddRole(IRole role)
-        {
-            if (role.Permissions.BanMembers || role.Permissions.KickMembers)
-            {
-                await ReplyAsync("I'm sorry, you can't make yourself a mod...");
-            }
-            else if (!role.Permissions.SendMessages)
-            {
-                await ReplyAsync("You probably don't really want to do that");
-            }
-            else
-            {
-                IGuildUser user = await Context.Guild.GetUserAsync(Context.User.Id);
-                if (user.RoleIds.Contains(role.Id)) await ReplyAsync("You already had that role");
-                else
-                {
-                    await user.AddRoleAsync(role);
-                    await ReplyAsync($"You now have the {role.Name} role");
-                }
-            }
-        }
-        
-        [Command("removerole")]
-        [Summary("Removes a given role from the user requesting. Syntax: ``!removerole (rolename)``")]
-        public async Task RemoveRole(IRole role)
-        {
-            if (role.Permissions.BanMembers || role.Permissions.KickMembers)
-            {
-                await ReplyAsync("Why would you do such thing?");
-            }
-            else if (!role.Permissions.SendMessages)
-            {
-                await ReplyAsync("Ha, you thought! Wait, how did you even call this command if you are muted?");
-            }
-            else
-            {
-                IGuildUser user = await Context.Guild.GetUserAsync(Context.User.Id);
-                if (user.RoleIds.Contains(role.Id))
-                {
-                    await user.RemoveRoleAsync(role);
-                    await ReplyAsync($"You no longer have the {role.Name} role");
-                }
-                else await ReplyAsync("You didnt actually have that role");
-            }
-        }
-
-        [Command("unmute")]
-        [Summary("Unmutes a given member. Syntax: ``!unmute (user)``")]
-        [RequireUserPermission(GuildPermission.KickMembers)]
-        public async Task UnmuteCommand(IGuildUser user) => await Muting.Unmute(user);
-
-        
     }
 }

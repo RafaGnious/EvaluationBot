@@ -7,24 +7,33 @@ using System.Threading;
 using System.Threading.Tasks;
 using Discord.Commands;
 using EvaluationBot.Data;
+using EvaluationBot.CommandServices;
 
 namespace EvaluationBot
 {
-    public static class Muting
+    public class Muting
     {
         public static Dictionary<ulong, (DateTime start, DateTime end)> MutedUsers = new Dictionary<ulong, (DateTime start, DateTime end)>();
         public static IRole Role;
-        static Muting()
-        {
 
+        public Services services;
+
+        public Muting(Services services)
+        {
+            this.services = services;
             Role = Program.Guild.Roles.First(x => !x.Permissions.SendMessages);
         }
-        public static async Task Mute(IGuildUser user, uint seconds, string reason, ICommandContext Context = null)
+
+        public async Task Mute(IGuildUser user, uint seconds, string reason, ICommandContext Context = null)
         {
             TimeSpan time = TimeSpan.FromSeconds(seconds);
+
             string Author;
-            if (Context == null) Author = "I";
-            else Author = Context.User.Mention;
+
+            if (Context == null)
+                Author = "I";
+            else
+                Author = Context.User.Mention;
             
             if (MutedUsers.ContainsKey(user.Id))
             {
@@ -33,7 +42,7 @@ namespace EvaluationBot
                 MutedUsers[user.Id] = tuple;
                 await user.DM($"Mute time increased by {time.ToString()}. You now have to wait more {tuple.end - DateTime.Now}. Reason: {reason}.");
                 await Program.LogChannel.SendMessageAsync($"{Author} increased {user.Mention}'s mute time  by {time.ToString()} for \"{reason}\". {user.Mention} now will be muted for {Muting.MutedUsers[user.Id]}");
-                DataBaseLoader.AddOrUpdateTimedAction("mute", user, MutedUsers[user.Id].start, MutedUsers[user.Id].end);
+                await DataBaseLoader.AddOrUpdateTimedAction("mute", user, MutedUsers[user.Id].start, MutedUsers[user.Id].end);
             }
             else
             {
@@ -41,7 +50,7 @@ namespace EvaluationBot
                 await user.AddRoleAsync(Muting.Role);
                 await user.DM($"You have been muted for {time.ToString()}. Reason: {reason} \n Please do not try to go around this.");
                 await Program.LogChannel.SendMessageAsync($"{Author} muted {user.Mention} for \"{reason}\" for {time.ToString()}");
-                DataBaseLoader.AddOrUpdateTimedAction("mute", user, MutedUsers[user.Id].start, MutedUsers[user.Id].end);
+                await DataBaseLoader.AddOrUpdateTimedAction("mute", user, MutedUsers[user.Id].start, MutedUsers[user.Id].end);
                 AwaitUnmute(user);
             }
 
@@ -60,64 +69,15 @@ namespace EvaluationBot
         {
             if (MutedUsers.ContainsKey(user.Id))
             {
-                DataBaseLoader.RemoveTimedAction("mute", user);
+
+                services.databaseLoader.RemoveTimedAction("mute", user);
                 MutedUsers.Remove(user.Id);
+
                 await user.RemoveRoleAsync(Role);
-                await user.DM("You were unmuted");
+                await user.DM("You were unmuted, you are now allowed to speak in Evaluation Station.");
+
                 await Program.LogChannel.SendMessageAsync($"{user.Mention} was unmuted."); 
             }
         }
     }
-    //public static class Muting
-    //{
-    //    
-    //    static Thread thread;
-    //    static TimeSpan nextUpdate;
-    //    
-
-    //    public static bool IsMuted(IGuildUser user) => MutedUsers.ContainsKey(user);
-
-    //    
-
-    //    public static async Task Mute(IGuildUser user, TimeSpan time)
-    //    {
-    //        /*if (thread.ThreadState == ThreadState.WaitSleepJoin) */thread.Abort();
-    //        MutedUsers.Add(user, DateTime.Now + time);
-    //        await user.AddRoleAsync(role);
-    //        thread.Start();
-    //    }
-
-    //    public static async Task Unmute(IGuildUser user)
-    //    {
-    //        lock (MutedUsers)
-    //        {
-    //            MutedUsers.Remove(user);
-    //        }
-    //        if(Program.Guild.Users.Contains(user)) await user.RemoveRoleAsync(role);
-    //    }
-
-    //    static async void MuteUpdateThread()
-    //    {
-    //        while (MutedUsers.Count > 0)
-    //        {
-    //            nextUpdate = new TimeSpan(60,60,60);
-    //            DateTime current = DateTime.Now;
-    //            HashSet<IGuildUser> toUnmute = new HashSet<IGuildUser>();
-    //            foreach (KeyValuePair<IGuildUser, DateTime> pair in MutedUsers)
-    //            {
-    //                if (pair.Value <= current)
-    //                {
-    //                    toUnmute.Add(pair.Key);
-    //                }
-    //                else if (pair.Value - current < nextUpdate)
-    //                {
-    //                    nextUpdate = pair.Value - current;
-    //                }
-    //            }
-    //            foreach (IGuildUser user in toUnmute) await Unmute(user);
-    //            Thread.Sleep(nextUpdate);
-    //        }
-    //    }
-
-    //}
 }

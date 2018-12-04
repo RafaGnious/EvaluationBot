@@ -10,17 +10,21 @@ public static class UserExtensions
         try
         {
             IDMChannel channel = await user.GetOrCreateDMChannelAsync();
+
             await channel.SendMessageAsync(message);
         }
         catch
         {
-            var builder = new StringBuilder();
-            builder.Append($"Couldn't DM {user.Mention}. ");
+            StringBuilder builder = new StringBuilder();
+
+            builder.Append($"Couldn't DM {user.Mention}.");
+
             if (PublicIfCantDM)
             {
                 builder.Append("Message was \n");
                 builder.Append(message);
             }
+
             await Program.CommandsChannel.SendMessageAsync(builder.ToString());
         }
     }
