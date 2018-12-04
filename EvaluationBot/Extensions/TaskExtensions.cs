@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord;
 
-namespace EvaluationBot
+namespace EvaluationBot.Extensions
 {
     public static class TaskExtensions
     {

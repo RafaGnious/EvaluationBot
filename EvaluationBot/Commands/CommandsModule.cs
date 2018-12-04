@@ -1,13 +1,10 @@
 ﻿using Discord.Commands;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
-using System.Linq;
 using Discord;
 using EvaluationBot.Data;
 using EvaluationBot.CommandServices;
-using System.Globalization;
+using EvaluationBot.Extensions;
 
 namespace EvaluationBot.Commands
 {

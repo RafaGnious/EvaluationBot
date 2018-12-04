@@ -8,6 +8,8 @@ using Discord;
 using System.Threading.Tasks;
 using MongoDB.Bson.Serialization.Attributes;
 
+using EvaluationBot.CommandServices;
+
 namespace EvaluationBot.Data
 {
     //Class not commented, add comments as you work on this! :)
@@ -17,6 +19,13 @@ namespace EvaluationBot.Data
         private static MongoClient client;
         private static IMongoCollection<UserInfo> UserInfos;
         private static IMongoCollection<TimedAction> TimedActions;
+
+        private Services services;
+
+        public DataBaseLoader(Services services)
+        {
+            this.services = services;
+        }
 
         public void LoadDatabase()
         {
@@ -41,8 +50,10 @@ namespace EvaluationBot.Data
             IFindFluent<TimedAction, TimedAction> Mutes = TimedActions.Find(Builders<TimedAction>.Filter.Eq("Kind", "mute"));
             foreach (TimedAction mute in Mutes.ToEnumerable())
             {
-                Muting.MutedUsers.Add(mute.GetDiscordId(), (mute.Start, mute.End));
-                Muting.AwaitUnmute(Program.Guild.GetUser(mute.GetDiscordId()));
+                services.silence.mutedUsers.Add(mute.GetDiscordId(), (mute.Start, mute.End));
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+                services.silence.AwaitUnmute(Program.Guild.GetUser(mute.GetDiscordId()));
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
             }
         }
 

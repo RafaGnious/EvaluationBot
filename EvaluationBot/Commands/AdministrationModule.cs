@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using EvaluationBot.CommandServices;
 using System.Globalization;
+using EvaluationBot.Extensions;
 
 namespace EvaluationBot.Commands
 {
@@ -51,7 +52,7 @@ namespace EvaluationBot.Commands
         public async Task ClearWarnings(IGuildUser user)
         {
             services.databaseLoader.ClearWarnings(user);
-            await ReplyAsync("Warnings cleared");
+            await ReplyAsync("Warnings cleared!");
         }
 
         [Command("removewarning"), Summary("Removes a warning from the specified user. Syntax: !removewarning (user) (index)")]
@@ -60,13 +61,13 @@ namespace EvaluationBot.Commands
         public async Task RemoveWarnings(IGuildUser user, int index)
         {
             services.databaseLoader.RemoveWarning(user, index);
-            await ReplyAsync("Warning removed");
+            await ReplyAsync("Warning removed!");
         }
 
         [Command("kick")]
         [Summary("Kicks a specified member. Syntax: ``!kick (user)``")]
-        [RequireUserPermission(GuildPermission.KickMembers)]
         [Alias("bye")]
+        [RequireUserPermission(GuildPermission.KickMembers)]
         public async Task Kick(IGuildUser user, string reason)
         {
             await Context.Message.DeleteAsync();
@@ -97,7 +98,7 @@ namespace EvaluationBot.Commands
 
         [Command("softban")]
         [Summary("Bans, and then unbans a member, deleting messages. Syntax: ``!softban (user) (reason)``")]
-        [RequireUserPermission(GuildPermission.KickMembers)]
+        [RequireUserPermission(GuildPermission.BanMembers)]
         public async Task SoftBan(IGuildUser user, string reason)
         {
             await Context.Message.DeleteAsync();
@@ -107,8 +108,8 @@ namespace EvaluationBot.Commands
         }
 
         [Command("purgedb")]
-        [RequireUserPermission(GuildPermission.KickMembers)]
         [Summary("Purges the database. You must be the bot owner to run this! Syntax: ``!purgedb (days to purge)``")]
+        [RequireOwner]
         public async Task PurgeDb(int days = 7)
         {
             if (Context.User.Id == 385164566658678784)
@@ -121,18 +122,18 @@ namespace EvaluationBot.Commands
         [Command("mute")]
         [Alias("stfu", "shutup", "hush", "silence")]
         [Summary("Mutes a given member for some time. Syntax: ``!mute (user) (time in seconds) (reason)``")]
-        [RequireUserPermission(GuildPermission.KickMembers)]
+        [RequireUserPermission(GuildPermission.MuteMembers)]
         public async Task MuteCommand(IGuildUser user, uint seconds, string reason = "Not specified")
         {
-            if (user.Id == Program.Client.CurrentUser.Id)
+            if (user.IsBot)
             {
-                await ReplyAsync("I'm unmutable :smiling_imp:");
+                await ReplyAsync("You shall not defeat my kind! :smiling_imp:");
             }
             else
             {
                 services.databaseLoader.AddWarning(user, $"\"{reason}\" {DateTime.UtcNow.ToString("g", CultureInfo.CreateSpecificCulture("en-US"))} (mute by {Context.User.Tag()})");
                 await Context.Message.DeleteAsync();
-                await Muting.Mute(user, seconds, reason, Context);
+                await services.silence.Mute(user, seconds, reason, Context);
             }
         }
 
@@ -140,7 +141,7 @@ namespace EvaluationBot.Commands
 
         [Command("clear")]
         [Summary("Clears a given amount of messages Syntax: ``!clear (amount)``")]
-        [RequireUserPermission(GuildPermission.KickMembers)]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
         public async Task Clear(int amount)
         {
             if (amount < 1)
@@ -148,40 +149,45 @@ namespace EvaluationBot.Commands
                 await ReplyAsync("cant delete less than one message").DeleteAfterSeconds(15);
                 return;
             }
+
             await Context.Message.DeleteAsync();
+
             IMessageChannel channel = Context.Channel;
             List<IMessage> messages = (await channel.GetMessagesAsync(amount).Flatten()).ToList();
+
             messages.RemoveAll(x => x.Timestamp.Day > 14);
+
             await channel.DeleteMessagesAsync(messages);
+
             await ReplyAsync($"{messages.Count} messages deleted.");
         }
 
         [Command("clear")]
         [Summary("Clears messages up to a given message. Syntax: ``!clear (message id)``")]
-        [RequireUserPermission(GuildPermission.KickMembers)]
+        [RequireUserPermission(GuildPermission.ManageMessages)]
         public async Task Clear(ulong id)
         {
-
             await Context.Message.DeleteAsync();
+
             IMessageChannel channel = Context.Channel;
             List<IMessage> messages = (await channel.GetMessagesAsync(id, Direction.After).Flatten()).ToList();
+
             await channel.DeleteMessagesAsync(messages);
+
             await ReplyAsync($"{messages.Count} messages deleted.");
-
-
         }
 
         [Command("addrole")]
         [Summary("Adds a given role to the user requesting. Syntax: ``!addrole (rolename)``")]
         public async Task AddRole(IRole role)
         {
-            if (role.Permissions.BanMembers || role.Permissions.KickMembers)
+            if ((role.Permissions.BanMembers || role.Permissions.KickMembers))
             {
                 await ReplyAsync("I'm sorry, you can't make yourself a mod...");
             }
             else if (!role.Permissions.SendMessages)
             {
-                await ReplyAsync("You probably don't really want to do that");
+                await ReplyAsync("You probably don't really want to do that.");
             }
             else
             {
@@ -222,6 +228,6 @@ namespace EvaluationBot.Commands
         [Command("unmute")]
         [Summary("Unmutes a given member. Syntax: ``!unmute (user)``")]
         [RequireUserPermission(GuildPermission.KickMembers)]
-        public async Task UnmuteCommand(IGuildUser user) => await Muting.Unmute(user);
+        public async Task UnmuteCommand(IGuildUser user) => await services.silence.Unmute(user);
     }
 }
