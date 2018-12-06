@@ -4,7 +4,7 @@ using System.Text;
 
 namespace EvaluationBot.Serialization
 {
-    public class PrivateSettings
+    public struct PrivateSettings
     {
         public string Token { get; set; }
         public ulong ServerId { get; set; }
