@@ -1,5 +1,7 @@
-﻿using EvaluationBot.Data;
+﻿using Discord.Commands;
+using EvaluationBot.Data;
 using System;
+using System.Collections.Generic;
 
 namespace EvaluationBot.CommandServices
 {
@@ -12,14 +14,21 @@ namespace EvaluationBot.CommandServices
         public DataBaseLoader databaseLoader { get; private set; }
         public Random random { get; private set; }
         public Muting silence { get; private set; }
+        public CommandService commandService { get; private set; }
 #pragma warning restore IDE1006 // Naming Styles
 
-        public Services()
+        public Services(CommandService commandService)
         {
+            this.commandService = commandService;
             this.databaseLoader = new DataBaseLoader(this);
             this.silence = new Muting(this);
 
             random = new Random();
+        }
+
+        public IEnumerable<ModuleInfo> GetModules()
+        {
+            return commandService.Modules;
         }
     }
 }

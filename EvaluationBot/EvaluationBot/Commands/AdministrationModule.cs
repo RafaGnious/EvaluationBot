@@ -25,7 +25,7 @@ namespace EvaluationBot.Commands
         [Command("warn"), Summary("Warns a given user that their behaviour wasn't appropriate. Syntax: ``!warn (user) (reason)``")]
         [Alias("badboy")]
         [RequireUserPermission(GuildPermission.KickMembers)]
-        public async Task Warn(IGuildUser user, string reason)
+        public async Task Warn(IGuildUser user, [Remainder]string reason)
         {
             await Context.Message.DeleteAsync();
             services.databaseLoader.AddWarning(user, $"\"{reason}\" {DateTime.UtcNow.ToString("g", CultureInfo.CreateSpecificCulture("en-US"))} (warning by {Context.User.Tag()})");
@@ -68,7 +68,7 @@ namespace EvaluationBot.Commands
         [Summary("Kicks a specified member. Syntax: ``!kick (user)``")]
         [Alias("bye")]
         [RequireUserPermission(GuildPermission.KickMembers)]
-        public async Task Kick(IGuildUser user, string reason)
+        public async Task Kick(IGuildUser user, [Remainder]string reason)
         {
             await Context.Message.DeleteAsync();
             await user.KickAsync(reason);
@@ -99,7 +99,7 @@ namespace EvaluationBot.Commands
         [Command("softban")]
         [Summary("Bans, and then unbans a member, deleting messages. Syntax: ``!softban (user) (reason)``")]
         [RequireUserPermission(GuildPermission.BanMembers)]
-        public async Task SoftBan(IGuildUser user, string reason)
+        public async Task SoftBan(IGuildUser user, [Remainder]string reason)
         {
             await Context.Message.DeleteAsync();
             await user.Guild.AddBanAsync(user, reason: reason);
@@ -112,18 +112,15 @@ namespace EvaluationBot.Commands
         [RequireOwner]
         public async Task PurgeDb(int days = 7)
         {
-            if (Context.User.Id == 385164566658678784)
-            {
-                services.databaseLoader.PruneDatabase(TimeSpan.FromDays(days));
-                await Context.User.DM("Database purged");
-            }
+            services.databaseLoader.PruneDatabase(TimeSpan.FromDays(days));
+            await Context.User.DM("Database purged");
         }
 
         [Command("mute")]
         [Alias("stfu", "shutup", "hush", "silence")]
         [Summary("Mutes a given member for some time. Syntax: ``!mute (user) (time in seconds) (reason)``")]
         [RequireUserPermission(GuildPermission.MuteMembers)]
-        public async Task MuteCommand(IGuildUser user, uint seconds, string reason = "Not specified")
+        public async Task MuteCommand(IGuildUser user, uint seconds, [Remainder]string reason = "Not specified")
         {
             if (user.IsBot)
             {
@@ -175,54 +172,6 @@ namespace EvaluationBot.Commands
             await channel.DeleteMessagesAsync(messages);
 
             await ReplyAsync($"{messages.Count} messages deleted.");
-        }
-
-        [Command("addrole")]
-        [Summary("Adds a given role to the user requesting. Syntax: ``!addrole (rolename)``")]
-        public async Task AddRole(IRole role)
-        {
-            if ((role.Permissions.BanMembers || role.Permissions.KickMembers))
-            {
-                await ReplyAsync("I'm sorry, you can't make yourself a mod...");
-            }
-            else if (!role.Permissions.SendMessages)
-            {
-                await ReplyAsync("You probably don't really want to do that.");
-            }
-            else
-            {
-                IGuildUser user = await Context.Guild.GetUserAsync(Context.User.Id);
-                if (user.RoleIds.Contains(role.Id)) await ReplyAsync("You already had that role");
-                else
-                {
-                    await user.AddRoleAsync(role);
-                    await ReplyAsync($"You now have the {role.Name} role");
-                }
-            }
-        }
-
-        [Command("removerole")]
-        [Summary("Removes a given role from the user requesting. Syntax: ``!removerole (rolename)``")]
-        public async Task RemoveRole(IRole role)
-        {
-            if (role.Permissions.BanMembers || role.Permissions.KickMembers)
-            {
-                await ReplyAsync("Why would you do such thing?");
-            }
-            else if (!role.Permissions.SendMessages)
-            {
-                await ReplyAsync("Ha, you thought! Wait, how did you even call this command if you are muted?");
-            }
-            else
-            {
-                IGuildUser user = await Context.Guild.GetUserAsync(Context.User.Id);
-                if (user.RoleIds.Contains(role.Id))
-                {
-                    await user.RemoveRoleAsync(role);
-                    await ReplyAsync($"You no longer have the {role.Name} role");
-                }
-                else await ReplyAsync("You didnt actually have that role");
-            }
         }
 
         [Command("unmute")]

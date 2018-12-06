@@ -5,43 +5,21 @@ using Discord;
 using EvaluationBot.Data;
 using EvaluationBot.CommandServices;
 using EvaluationBot.Extensions;
+using System.Collections.Generic;
+using System.Linq;
+using Discord.WebSocket;
 
 namespace EvaluationBot.Commands
 {
-    public class CommandsModule : ModuleBase
+    [Name("Utility")]
+    [Summary("Useful commands that anyone can use.")]
+    public class UtilityModule : ModuleBase
     {
         private Services services;
 
-        public CommandsModule(Services services)
+        public UtilityModule(Services services)
         {
             this.services = services;
-        }
-
-        [Command("help")]
-        [Alias("commands")]
-        [Summary("Shows commands and their descriptions. Syntax: ``!help``")]
-        public async Task Help()
-        {
-            await ReplyAsync(Program.Help);
-        }
-
-        [Command("ping")]
-        [Alias("pong")]
-        [Summary("Display the bots ping. Syntax: ``!ping``")]
-        private async Task Ping()
-        {
-            //Reply immediatly and wait for message to send.
-            IUserMessage message = await ReplyAsync($"Pong :blush:");
-
-            //Get the time since the user sent their message, and use it to find the delay.
-            TimeSpan time = message.Timestamp.Subtract(Context.Message.Timestamp);
-
-            //Modify the previous message to include the delay.
-            await message.ModifyAsync(m => m.Content = $"Pong :blush: (**{time.TotalMilliseconds}** *ms*)");
-
-            //Delete after 3 minutes
-            await message.DeleteAfterTime(minutes: 3);
-            await Context.Message.DeleteAfterTime(minutes: 3);
         }
         
         [Command("quote")]
@@ -117,12 +95,8 @@ namespace EvaluationBot.Commands
                 Embed embed = builder.Build();
 
                 await ReplyAsync(null, false, embed);
-
-                await Context.Message.DeleteAsync();
-                return;
             }
-            
-            if (user.IsBot)
+            else if (user.IsBot)
             {
                 await ReplyAsync("Introduction unavailable for bot");
             }
@@ -151,29 +125,9 @@ namespace EvaluationBot.Commands
                 var embed = builder.Build();
 
                 await ReplyAsync("", false, embed);
-
-                await Task.Delay(1000);
-
-                await Context.Message.DeleteAsync(); 
             }
-        }
 
-        [Command("coinflip")]
-        [Alias("flipcoin")]
-        [Summary("Flips a coin! Heads or tails? Syntax: ``!coinflip``")]
-        public async Task CoinFlip()
-        {
-            string side = services.random.Next(0, 2) == 0 ? "Tails!" : "Heads!";
-
-            await ReplyAsync(side);
-        }
-
-        [Command("random")]
-        [Alias("rand")]
-        [Summary("Returns an integer between 1 and the specified number. Syntax: ``!random (maximum exclusive) (optional minimum inclusive)``")]
-        public async Task Random(int max, int min = 1)
-        {
-            await ReplyAsync(((new Random().Next() % max) + min).ToString());
+            await Context.Message.DeleteAsync();
         }
 
         [Command("profile")]
@@ -194,9 +148,58 @@ namespace EvaluationBot.Commands
                 embedBuilder.AddField("Level: ", info.Level()).AddInlineField("Xp: ", info.Xp);
                 embedBuilder.AddField("Karma: ", info.Karma); 
             }
+
             await ReplyAsync("", embed: embedBuilder.Build());
         }
-        
+
+        [Command("addrole")]
+        [Summary("Adds a given role to the user requesting. Syntax: ``!addrole (rolename)``")]
+        public async Task AddRole(IRole role)
+        {
+            if ((role.Permissions.BanMembers || role.Permissions.KickMembers))
+            {
+                await ReplyAsync("I'm sorry, you can't make yourself a mod...");
+            }
+            else if (!role.Permissions.SendMessages)
+            {
+                await ReplyAsync("You probably don't really want to do that.");
+            }
+            else
+            {
+                IGuildUser user = await Context.Guild.GetUserAsync(Context.User.Id);
+                if (user.RoleIds.Contains(role.Id)) await ReplyAsync("You already had that role");
+                else
+                {
+                    await user.AddRoleAsync(role);
+                    await ReplyAsync($"You now have the {role.Name} role");
+                }
+            }
+        }
+
+        [Command("removerole")]
+        [Summary("Removes a given role from the user requesting. Syntax: ``!removerole (rolename)``")]
+        public async Task RemoveRole(IRole role)
+        {
+            if (role.Permissions.BanMembers || role.Permissions.KickMembers)
+            {
+                await ReplyAsync("Why would you do such thing?");
+            }
+            else if (!role.Permissions.SendMessages)
+            {
+                await ReplyAsync("Ha, you thought! Wait, how did you even call this command if you are muted?");
+            }
+            else
+            {
+                IGuildUser user = await Context.Guild.GetUserAsync(Context.User.Id);
+                if (user.RoleIds.Contains(role.Id))
+                {
+                    await user.RemoveRoleAsync(role);
+                    await ReplyAsync($"You no longer have the {role.Name} role");
+                }
+                else await ReplyAsync("You didnt actually have that role");
+            }
+        }
+
         [Command("birthday")]
         [Alias("bday")]
         [Summary("Coming soon... Syntax: ``!birthday (optional user)``"/*"Shows the user's birthday. "*/)]
