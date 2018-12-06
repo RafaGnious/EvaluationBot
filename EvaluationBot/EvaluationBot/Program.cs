@@ -181,7 +181,7 @@ namespace EvaluationBot
 
         private async Task UserLeft_OnUserLeft(SocketGuildUser user)
         {
-            await LogChannel.SendMessageAsync($"{user.Mention} left after {DateTime.Now - user.JoinedAt}");
+            await LogChannel.SendMessageAsync($"{user.Mention} left after {(DateTime.Now - user.JoinedAt).Value.ToString()}");
         }
 
         private async Task Welcome_OnUserJoined(SocketGuildUser user) =>
@@ -257,7 +257,7 @@ namespace EvaluationBot
 
         private Task IntroductionEditHandle(Cacheable<IMessage, ulong> arg1, SocketMessage msg, ISocketMessageChannel arg3)
         {
-            if (msg != null && !msg.Author.IsBot && !XpCooldowns.Contains(msg.Author.Id))
+            if (msg != null && !msg.Author.IsBot && arg3.Id == PrivateSettings.IntrosChannel)
             {
                 HandleIntroductionsMessage(msg);
             }
