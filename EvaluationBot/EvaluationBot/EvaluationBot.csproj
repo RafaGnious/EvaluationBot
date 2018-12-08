@@ -198,7 +198,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CommandServices\Muting.cs" />
+    <Compile Include="CommandServices\Timing.cs" />
     <Compile Include="CommandServices\Services.cs" />
     <Compile Include="Commands\AdministrationModule.cs" />
     <Compile Include="Commands\HelpModule.cs" />

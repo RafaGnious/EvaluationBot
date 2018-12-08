@@ -189,9 +189,9 @@ namespace EvaluationBot
 
         private async Task CheckForMuteEvasion_OnUserJoined(SocketGuildUser user)
         {
-            if (mainServices.silence.mutedUsers.ContainsKey(user.Id))
+            if (mainServices.time.MutedUsers.ContainsKey(user.Id))
             {
-                await user.AddRoleAsync(mainServices.silence.role);
+                await user.AddRoleAsync(mainServices.time.role);
                 await (await user.GetOrCreateDMChannelAsync()).SendMessageAsync("I said please :sadface:");
                 await LogChannel.SendMessageAsync($"{user.Mention} tried to evade mute.");
                 //await EvaluationBot.Commands.CommandsModule.Mute(user, (uint)Muting.MutedUsers[user.Id].TotalSeconds, "Attempting to go around mute");

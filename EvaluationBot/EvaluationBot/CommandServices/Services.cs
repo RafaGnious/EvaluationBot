@@ -13,15 +13,15 @@ namespace EvaluationBot.CommandServices
 #pragma warning disable IDE1006 // Naming Styles
         public DataBaseLoader databaseLoader { get; private set; }
         public Random random { get; private set; }
-        public Muting silence { get; private set; }
+        public Timing time { get; private set; }
         public CommandService commandService { get; private set; }
 #pragma warning restore IDE1006 // Naming Styles
 
         public Services(CommandService commandService)
         {
             this.commandService = commandService;
-            this.databaseLoader = new DataBaseLoader(this);
-            this.silence = new Muting(this);
+            databaseLoader = new DataBaseLoader(this);
+            time = new Timing(this);
 
             random = new Random();
         }

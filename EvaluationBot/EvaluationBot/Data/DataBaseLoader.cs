@@ -47,39 +47,63 @@ namespace EvaluationBot.Data
 
         public void ReloadTimedActions()
         {
-            IFindFluent<TimedAction, TimedAction> Mutes = TimedActions.Find(Builders<TimedAction>.Filter.Eq("Kind", "mute"));
-            foreach (TimedAction mute in Mutes.ToEnumerable())
+            IFindFluent<TimedAction, TimedAction> Finder = TimedActions.Find(Builders<TimedAction>.Filter.Eq("Kind", "mute"));
+            foreach (TimedAction mute in Finder.ToEnumerable())
             {
-                services.silence.mutedUsers.Add(mute.GetDiscordId(), (mute.Start, mute.End));
+                services.time.MutedUsers.Add(mute.GetDiscordId(), (mute.Start, mute.End));
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                services.silence.AwaitUnmute(Program.Guild.GetUser(mute.GetDiscordId()));
+                services.time.AwaitUnmute(Program.Guild.GetUser(mute.GetDiscordId()));
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
             }
+            Finder = TimedActions.Find(Builders<TimedAction>.Filter.Eq("Kind", "reminder"));
+            foreach (TimedAction reminder in Finder.ToEnumerable())
+            {
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+                if(reminder.End<DateTime.Now)
+                services.time.AwaitRemind(Program.Guild.GetUser(reminder.GetDiscordId()), int.Parse(reminder._id[reminder._id.Length-1].ToString()), reminder.AdditionalArg, reminder.End - DateTime.Now);
+                else
+                    services.time.AwaitRemind(Program.Guild.GetUser(reminder.GetDiscordId()), int.Parse(reminder._id[reminder._id.Length - 1].ToString()), reminder.AdditionalArg, TimeSpan.FromSeconds(1));
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            }
+
         }
 
         private void GenerateNewInfo(IUser user) => UserInfos.InsertOneAsync(new UserInfo(user.Id));
 
-        public async Task AddOrUpdateTimedAction(string kind, IUser user, DateTime Start, DateTime End)
+        public async Task AddOrUpdateMute(IUser user, DateTime Start, DateTime End)
         {
             if (user.IsBot) return;
-            string _id = $"{user.Id}{kind[0]}{kind[0]}{kind[0]}{kind[0]}{kind[0]}{kind[0]}";
+            string _id = $"{user.Id}m0";
 
-            if ((await TimedActions.Find(Builders<TimedAction>.Filter.Eq("_id", _id)).CountDocumentsAsync())==0)
+            if ((await TimedActions.Find(Builders<TimedAction>.Filter.Eq("_id", _id)).CountDocumentsAsync()) == 0)
             {
-                TimedActions.InsertOne(new TimedAction(_id, kind, Start, End));
+                TimedActions.InsertOne(new TimedAction(_id, "mute", Start, End));
                 UpdateDefinition<UserInfo> update = Builders<UserInfo>.Update.Inc("TimedActions", 1);
                 await UserInfos.UpdateOneAsync(Builders<UserInfo>.Filter.Eq("_id", $"{user.Id}aaaaaa"), update);
             }
             else
             {
-                TimedActions.ReplaceOne(Builders<TimedAction>.Filter.Eq("_id", _id), new TimedAction(_id, kind, Start, End));
+                TimedActions.ReplaceOne(Builders<TimedAction>.Filter.Eq("_id", _id), new TimedAction(_id, "mute", Start, End));
             }
         }
+        public async Task<int> AddReminder(IUser user, string message, DateTime Start, DateTime End)
+        {
+            if (user.IsBot) return 0;
+            int amount = (int)(await TimedActions.Find(Builders<TimedAction>.Filter.Where(x => x._id.StartsWith($"{user.Id}r"))).CountDocumentsAsync());
+            if (amount > 9) return -1;
+            string _id = $"{user.Id}r{amount}";
 
-        public void RemoveTimedAction(string kind, IUser user)
+            TimedActions.InsertOne(new TimedAction(_id, "reminder", Start, End, message));
+            UpdateDefinition<UserInfo> update = Builders<UserInfo>.Update.Inc("TimedActions", 1);
+            await UserInfos.UpdateOneAsync(Builders<UserInfo>.Filter.Eq("_id", $"{user.Id}aaaaaa"), update);
+            return amount;
+
+        }
+
+        public void RemoveTimedAction(string kind, int index, IUser user)
         {
             if (user.IsBot) return;
-            TimedActions.DeleteOneAsync(Builders<TimedAction>.Filter.Eq("_id", $"{user.Id}{kind[0]}{kind[0]}{kind[0]}{kind[0]}{kind[0]}{kind[0]}"));
+            TimedActions.DeleteOneAsync(Builders<TimedAction>.Filter.Eq("_id", $"{user.Id}{kind[0]}{index}"));
             UpdateDefinition<UserInfo> update = Builders<UserInfo>.Update.Inc("TimedActions", -1);
             UserInfos.UpdateOneAsync(Builders<UserInfo>.Filter.Eq("_id", $"{user.Id}aaaaaa"), update);
         }
@@ -272,20 +296,32 @@ namespace EvaluationBot.Data
                 return ulong.Parse(_id.Remove(18));
             }
 
-            void SetDiscordId(ulong value)
+            void SetDiscordId(ulong value, int amount)
             {
-                _id = $"{value}{Kind[0]}{Kind[0]}{Kind[0]}{Kind[0]}{Kind[0]}{Kind[0]}";
+                _id = $"{value}{Kind[0]}{amount}";
             }
 
             public DateTime Start { get; set; }
             public DateTime End { get; set; }
 
-            public TimedAction(string id, string kind, DateTime start, DateTime end)
+            public string AdditionalArg { get; set; }
+
+            public TimedAction(string id, string kind, DateTime start, DateTime end, string arg = "")
             {
                 _id = id;
                 Kind = kind;
                 Start = start;
                 End = end;
+                AdditionalArg = arg;
+            }
+
+            public TimedAction(IUser user, int amount, string kind, DateTime start, DateTime end, string arg = "")
+            {
+                _id = $"{user.Id}{kind[0]}{amount}";
+                Kind = kind;
+                Start = start;
+                End = end;
+                AdditionalArg = arg;
             }
         }
     }

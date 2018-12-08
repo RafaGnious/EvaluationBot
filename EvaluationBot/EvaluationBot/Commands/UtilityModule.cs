@@ -200,25 +200,40 @@ namespace EvaluationBot.Commands
             }
         }
 
-        [Command("birthday")]
-        [Alias("bday")]
-        [Summary("Coming soon... Syntax: ``!birthday (optional user)``"/*"Shows the user's birthday. "*/)]
-        private async Task Birthday(IGuildUser user)
+        [Command("remindme")]
+        [Alias("reminder", "setreminder")]
+        [Summary("Reminds you of something after some time has elapsed. Usage !remindme reminder time")]
+        public async Task Reminder(string reminder, TimeSpan time)
         {
-            await ReplyAsync("Coming soon...");
-            //DateTime date = (await DataBaseLoader.GetInfo(user)).Birthday;
-            //if (date != default(DateTime)) await ReplyAsync($"{user.Nickname}'s birthday is at {date.ToLongDateString()}");
-            //else await ReplyAsync($"{user.Nickname} didn't register his birthday in the database. He can do so by using the command !setbirthday DD-MM-YYYY");
+            int index = await services.databaseLoader.AddReminder(Context.User, reminder, DateTime.Now, DateTime.Now + time);
+            if (index == -1)
+                await ReplyAsync("You exceeded the limit of 10 reminders").DeleteAfterSeconds(15);
+            else
+            {
+                await ReplyAsync("Reminder added :thumbsup:").DeleteAfterSeconds(15);
+                await services.time.AwaitRemind(Context.User, index, reminder, time);
+            }
         }
 
-        [Command("setbirthday")]
-        [Alias("setbday")]
-        [Summary("Coming soon... Syntax: ``!birthday DD-MM-YYYY``"/*"Sets your birthday."*/)]
-        private async Task SetBirthday(string date)
-        {
-            await ReplyAsync("Coming soon...");
-            //DataBaseLoader.SetBirthday(Context.User, new DateTime(2001, 7, 30)/*DateTime.ParseExact(date, "dd-MM-yy", CultureInfo.InvariantCulture)*/);
-            //await ReplyAsync("Done!").DeleteAfterSeconds(30);
-        }
+        //[Command("birthday")]
+        //[Alias("bday")]
+        //[Summary("Coming soon... Syntax: ``!birthday (optional user)``"/*"Shows the user's birthday. "*/)]
+        //private async Task Birthday(IGuildUser user)
+        //{
+        //    await ReplyAsync("Coming soon...");
+        //    //DateTime date = (await DataBaseLoader.GetInfo(user)).Birthday;
+        //    //if (date != default(DateTime)) await ReplyAsync($"{user.Nickname}'s birthday is at {date.ToLongDateString()}");
+        //    //else await ReplyAsync($"{user.Nickname} didn't register his birthday in the database. He can do so by using the command !setbirthday DD-MM-YYYY");
+        //}
+
+        //[Command("setbirthday")]
+        //[Alias("setbday")]
+        //[Summary("Coming soon... Syntax: ``!birthday DD-MM-YYYY``"/*"Sets your birthday."*/)]
+        //private async Task SetBirthday(string date)
+        //{
+        //    await ReplyAsync("Coming soon...");
+        //    //DataBaseLoader.SetBirthday(Context.User, new DateTime(2001, 7, 30)/*DateTime.ParseExact(date, "dd-MM-yy", CultureInfo.InvariantCulture)*/);
+        //    //await ReplyAsync("Done!").DeleteAfterSeconds(30);
+        //}
     }
 }

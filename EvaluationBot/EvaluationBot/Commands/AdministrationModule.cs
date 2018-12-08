@@ -130,7 +130,7 @@ namespace EvaluationBot.Commands
             {
                 services.databaseLoader.AddWarning(user, $"\"{reason}\" {DateTime.UtcNow.ToString("g", CultureInfo.CreateSpecificCulture("en-US"))} (mute by {Context.User.Tag()})");
                 await Context.Message.DeleteAsync();
-                await services.silence.Mute(user, seconds, reason, Context);
+                await services.time.Mute(user, seconds, reason, Context);
             }
         }
 
@@ -177,6 +177,6 @@ namespace EvaluationBot.Commands
         [Command("unmute")]
         [Summary("Unmutes a given member. Syntax: ``!unmute (user)``")]
         [RequireUserPermission(GuildPermission.KickMembers)]
-        public async Task UnmuteCommand(IGuildUser user) => await services.silence.Unmute(user);
+        public async Task UnmuteCommand(IGuildUser user) => await services.time.Unmute(user);
     }
 }
