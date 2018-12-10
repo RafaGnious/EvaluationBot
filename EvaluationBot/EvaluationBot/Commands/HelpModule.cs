@@ -22,9 +22,11 @@ namespace EvaluationBot.Commands
             this.services = services;
         }
 
+        
         [Command("help")]
         [Alias("commands, modules")]
         [Summary("Gives you a quick run down of how to use the bot, the bots modules, and their descriptions. Syntax: ``!help``")]
+        [BotCommandsChannel]
         public async Task Help()
         {
             EmbedBuilder embed = new EmbedBuilder();
@@ -84,6 +86,7 @@ namespace EvaluationBot.Commands
         [Command("module")]
         [Alias("mod")]
         [Summary("Shows commands and their descriptions. Syntax: ``!module (module name)``")]
+        [BotCommandsChannel]
         public async Task Module([Remainder]string name)
         {
             ModuleInfo module = services.GetModules().First(n => (n.Name.ToLower() == name.ToLower()));

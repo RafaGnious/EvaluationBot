@@ -192,7 +192,7 @@ namespace EvaluationBot
             if (mainServices.time.MutedUsers.ContainsKey(user.Id))
             {
                 await user.AddRoleAsync(mainServices.time.role);
-                await (await user.GetOrCreateDMChannelAsync()).SendMessageAsync("I said please :sadface:");
+                await (await user.GetOrCreateDMChannelAsync()).SendMessageAsync("I said please :disappointed_relieved:");
                 await LogChannel.SendMessageAsync($"{user.Mention} tried to evade mute.");
                 //await EvaluationBot.Commands.CommandsModule.Mute(user, (uint)Muting.MutedUsers[user.Id].TotalSeconds, "Attempting to go around mute");
             }
@@ -250,8 +250,7 @@ namespace EvaluationBot
 
                 IUserMessage m = await context.Channel.SendMessageAsync(result.ErrorReason);
                 m.DeleteAfterSeconds(10);
-                //await Task.Delay(10000).ContinueWith(t => m.DeleteAsync());
-
+                messageParam.DeleteAfterSeconds(20);
             }
         }
 

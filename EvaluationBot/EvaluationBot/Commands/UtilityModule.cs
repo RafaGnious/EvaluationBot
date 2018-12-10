@@ -24,6 +24,7 @@ namespace EvaluationBot.Commands
         
         [Command("quote")]
         [Summary("Quote a users message. Syntax: ``!quote messageid (optional subtitle) (optional channel Name)``")]
+ 
         private async Task QuoteMessage(ulong id, string subtitle = null, IMessageChannel channel = null)
         {
             //If the channel is null, use the message context's channel.
@@ -154,6 +155,7 @@ namespace EvaluationBot.Commands
 
         [Command("addrole")]
         [Summary("Adds a given role to the user requesting. Syntax: ``!addrole (rolename)``")]
+        [BotCommandsChannel]
         public async Task AddRole(IRole role)
         {
             if ((role.Permissions.BanMembers || role.Permissions.KickMembers))
@@ -178,6 +180,7 @@ namespace EvaluationBot.Commands
 
         [Command("removerole")]
         [Summary("Removes a given role from the user requesting. Syntax: ``!removerole (rolename)``")]
+        [BotCommandsChannel]
         public async Task RemoveRole(IRole role)
         {
             if (role.Permissions.BanMembers || role.Permissions.KickMembers)

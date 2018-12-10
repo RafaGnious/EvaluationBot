@@ -198,6 +198,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BotCommandsChannel.cs" />
     <Compile Include="CommandServices\Timing.cs" />
     <Compile Include="CommandServices\Services.cs" />
     <Compile Include="Commands\AdministrationModule.cs" />
