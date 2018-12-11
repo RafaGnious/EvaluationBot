@@ -198,7 +198,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BotCommandsChannel.cs" />
+    <Compile Include="Preconditions\BotCommandsChannel.cs" />
     <Compile Include="CommandServices\Timing.cs" />
     <Compile Include="CommandServices\Services.cs" />
     <Compile Include="Commands\AdministrationModule.cs" />
@@ -212,6 +212,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serialization\PrivateSettings.cs" />
+    <Compile Include="VirtualMessage.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

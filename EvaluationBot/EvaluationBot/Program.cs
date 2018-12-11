@@ -242,15 +242,38 @@ namespace EvaluationBot
                 return;
             // Create a Command Context
             CommandContext context = new CommandContext(Client, message);
+
             // Execute the command. (result does not indicate a return value,
             // rather an object stating if the command executed successfully)
             IResult result = await commandService.ExecuteAsync(context, argPos, services);
             if (!result.IsSuccess)
             {
 
-                IUserMessage m = await context.Channel.SendMessageAsync(result.ErrorReason);
-                m.DeleteAfterSeconds(10);
-                messageParam.DeleteAfterSeconds(20);
+                await context.Channel.SendMessageAsync(result.ErrorReason).DeleteAfterSeconds(10);
+                
+                //redirects commands channel exclusive commands there
+                if (result.ErrorReason.StartsWith("That command can only be used in"))
+                {
+                    await RedirectCommand(message, argPos, CommandsChannel);
+                    await messageParam.DeleteAsync();
+                }
+                else messageParam.DeleteAfterSeconds(10);
+            }
+        }
+
+        public async Task RedirectCommand(SocketUserMessage message, int argPos, IMessageChannel redirectTo)
+        {
+            await CommandsChannel.SendMessageAsync(message.Author.Mention).DeleteAfterSeconds(15);
+
+            VirtualMessage virtualMessage = new VirtualMessage(message);
+            virtualMessage.Channel = CommandsChannel;
+
+            CommandContext context = new CommandContext(Client, virtualMessage);
+            IResult result = await commandService.ExecuteAsync(context, argPos, services);
+
+            if (!result.IsSuccess)
+            {
+                await CommandsChannel.SendMessageAsync(result.ErrorReason).DeleteAfterSeconds(10);
             }
         }
 
