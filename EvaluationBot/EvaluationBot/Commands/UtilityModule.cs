@@ -24,7 +24,6 @@ namespace EvaluationBot.Commands
         
         [Command("quote")]
         [Summary("Quote a users message. Syntax: ``!quote messageid (optional subtitle) (optional channel Name)``")]
- 
         private async Task QuoteMessage(ulong id, string subtitle = null, IMessageChannel channel = null)
         {
             //If the channel is null, use the message context's channel.
@@ -205,8 +204,8 @@ namespace EvaluationBot.Commands
 
         [Command("remindme")]
         [Alias("reminder", "setreminder")]
-        [Summary("Reminds you of something after some time has elapsed. Usage !remindme reminder time")]
-        public async Task Reminder(string reminder, TimeSpan time)
+        [Summary("Reminds you of something after some time has elapsed. Usage !remindme time reminder")]
+        public async Task Reminder(TimeSpan time, [Remainder]string reminder)
         {
             int index = await services.databaseLoader.AddReminder(Context.User, reminder, DateTime.Now, DateTime.Now + time);
             if (index == -1)
@@ -218,6 +217,8 @@ namespace EvaluationBot.Commands
             }
         }
 
+        //TODO: fix this |  |  |
+        //               V  V  V
         //[Command("birthday")]
         //[Alias("bday")]
         //[Summary("Coming soon... Syntax: ``!birthday (optional user)``"/*"Shows the user's birthday. "*/)]

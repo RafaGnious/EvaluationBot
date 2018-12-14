@@ -182,6 +182,7 @@ namespace EvaluationBot
         private async Task UserLeft_OnUserLeft(SocketGuildUser user)
         {
             await LogChannel.SendMessageAsync($"{user.Mention} left after {(DateTime.Now - user.JoinedAt).Value.ToString()}");
+            mainServices.databaseLoader.Left(user, user.JoinedAt.Value.DateTime);
         }
 
         private async Task Welcome_OnUserJoined(SocketGuildUser user) =>

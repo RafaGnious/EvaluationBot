@@ -23,9 +23,9 @@ namespace EvaluationBot.CommandServices
         }
 
         #region MuteMethods
-        public async Task Mute(IGuildUser user, uint seconds, string reason, ICommandContext Context = null)
+        public async Task Mute(IGuildUser user, uint seconds, string reason, ICommandContext Context = null) => await Mute(user, TimeSpan.FromSeconds(seconds), reason, Context);
+        public async Task Mute(IGuildUser user, TimeSpan time, string reason, ICommandContext Context = null)
         {
-            TimeSpan time = TimeSpan.FromSeconds(seconds);
 
             string Author;
 

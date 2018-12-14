@@ -22,6 +22,14 @@ namespace EvaluationBot.Commands
             this.services = services;
         }
 
+        [Command("say")]
+        [RequireUserPermission(GuildPermission.Administrator)]
+        public async Task Say(IMessageChannel channel, [Remainder]string content)
+        {
+            await Context.Message.DeleteAsync();
+            await channel.SendMessageAsync(content);
+        }
+
         [Command("warn"), Summary("Warns a given user that their behaviour wasn't appropriate. Syntax: ``!warn (user) (reason)``")]
         [Alias("badboy")]
         [RequireUserPermission(GuildPermission.KickMembers)]
@@ -107,13 +115,13 @@ namespace EvaluationBot.Commands
             await Program.LogChannel.SendMessageAsync($"{Context.User.Mention} softbanned {user.Mention} for \"{reason}\"");
         }
 
-        [Command("purgedb")]
+        [Command("prunedb")]
         [Summary("Purges the database. You must be the bot owner to run this! Syntax: ``!purgedb (days to purge)``")]
-        [RequireOwner]
-        public async Task PurgeDb(int days = 7)
+        [RequireUserId(385164566658678784)]
+        public async Task PruneDb(int days = 7)
         {
             services.databaseLoader.PruneDatabase(TimeSpan.FromDays(days));
-            await Context.User.DM("Database purged");
+            await Context.User.DM("Database pruned");
         }
 
         [Command("mute")]
@@ -131,6 +139,23 @@ namespace EvaluationBot.Commands
                 services.databaseLoader.AddWarning(user, $"\"{reason}\" {DateTime.UtcNow.ToString("g", CultureInfo.CreateSpecificCulture("en-US"))} (mute by {Context.User.Tag()})");
                 await Context.Message.DeleteAsync();
                 await services.time.Mute(user, seconds, reason, Context);
+            }
+        }
+        [Command("mute")]
+        [Alias("stfu", "shutup", "hush", "silence")]
+        [Summary("Mutes a given member for some time. Syntax: ``!mute (user) (time in seconds) (reason)``")]
+        [RequireUserPermission(GuildPermission.MuteMembers)]
+        public async Task MuteCommand(IGuildUser user, TimeSpan time, [Remainder]string reason = "Not specified")
+        {
+            if (user.IsBot)
+            {
+                await ReplyAsync("You shall not defeat my kind! :smiling_imp:");
+            }
+            else
+            {
+                services.databaseLoader.AddWarning(user, $"\"{reason}\" {DateTime.UtcNow.ToString("g", CultureInfo.CreateSpecificCulture("en-US"))} (mute by {Context.User.Tag()})");
+                await Context.Message.DeleteAsync();
+                await services.time.Mute(user, time, reason, Context);
             }
         }
 

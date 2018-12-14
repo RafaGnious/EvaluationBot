@@ -301,7 +301,9 @@ namespace EvaluationBot.Data
                 _id = $"{value}{Kind[0]}{amount}";
             }
 
+            [BsonDateTimeOptions(Kind = DateTimeKind.Local)]
             public DateTime Start { get; set; }
+            [BsonDateTimeOptions(Kind = DateTimeKind.Local)]
             public DateTime End { get; set; }
 
             public string AdditionalArg { get; set; }
