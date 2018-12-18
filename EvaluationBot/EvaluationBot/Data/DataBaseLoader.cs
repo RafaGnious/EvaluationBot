@@ -59,7 +59,7 @@ namespace EvaluationBot.Data
             foreach (TimedAction reminder in Finder.ToEnumerable())
             {
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                if(reminder.End<DateTime.Now)
+                if(reminder.End>DateTime.Now)
                 services.time.AwaitRemind(Program.Guild.GetUser(reminder.GetDiscordId()), int.Parse(reminder._id[reminder._id.Length-1].ToString()), reminder.AdditionalArg, reminder.End - DateTime.Now);
                 else
                     services.time.AwaitRemind(Program.Guild.GetUser(reminder.GetDiscordId()), int.Parse(reminder._id[reminder._id.Length - 1].ToString()), reminder.AdditionalArg, TimeSpan.FromSeconds(1));

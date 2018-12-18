@@ -29,6 +29,13 @@ namespace EvaluationBot.Commands
             await Context.Message.DeleteAsync();
             await channel.SendMessageAsync(content);
         }
+        [Command("say")]
+        [RequireUserPermission(GuildPermission.Administrator)]
+        public async Task Say([Remainder]string content)
+        {
+            await Context.Message.DeleteAsync();
+            await Context.Channel.SendMessageAsync(content);
+        }
 
         [Command("warn"), Summary("Warns a given user that their behaviour wasn't appropriate. Syntax: ``!warn (user) (reason)``")]
         [Alias("badboy")]
