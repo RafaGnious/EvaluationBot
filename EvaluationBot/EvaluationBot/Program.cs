@@ -181,7 +181,16 @@ namespace EvaluationBot
 
         private async Task UserLeft_OnUserLeft(SocketGuildUser user)
         {
-            await LogChannel.SendMessageAsync($"{user.Mention} left after {(DateTime.Now - user.JoinedAt).Value.ToString()}");
+            StringBuilder roles = new StringBuilder("{");
+            foreach (IRole role in user.Roles)
+            {
+                if (role.Name == "@everyone") continue;
+                roles.Append(role.Name);
+                roles.Append("; ");
+            }
+            roles.Append("}");
+            TimeSpan time = (DateTime.Now - user.JoinedAt).Value;
+            await LogChannel.SendMessageAsync($"{user.Mention} (Tag:{user.Tag()} Nickname:{user.Nickname??"none"} Roles:{roles.ToString()}) left after {time.Days} days and {time.Hours.ToString("00")}:{time.Minutes.ToString("00")}:{time.Seconds.ToString("00")}");
             mainServices.databaseLoader.Left(user, user.JoinedAt.Value.DateTime);
         }
 

@@ -8,6 +8,8 @@ using EvaluationBot.Extensions;
 using System.Collections.Generic;
 using System.Linq;
 using Discord.WebSocket;
+using static EvaluationBot.Data.DataBaseLoader;
+using System.Text;
 
 namespace EvaluationBot.Commands
 {
@@ -26,6 +28,7 @@ namespace EvaluationBot.Commands
         [Summary("Quote a users message. Syntax: ``!quote messageid (optional subtitle) (optional channel Name)``")]
         private async Task QuoteMessage(ulong id, string subtitle = null, IMessageChannel channel = null)
         {
+            if (subtitle != null && (subtitle.Contains("@everyone") || subtitle.Contains("@here"))) return;
             //If the channel is null, use the message context's channel.
             channel = channel ?? Context.Channel;
 
@@ -215,6 +218,51 @@ namespace EvaluationBot.Commands
                 await ReplyAsync("Reminder added :thumbsup:").DeleteAfterSeconds(15);
                 await services.time.AwaitRemind(Context.User, index, reminder, time);
             }
+        }
+
+        [Command("top")]
+        [Alias("topxp", "topexperience", "xptop")]
+        [Summary("Gets the 10 users with higher Xp")]
+        public async Task TopXp()
+        {
+            IEnumerable<UserInfo> users = services.databaseLoader.GetTopXp(10);
+            StringBuilder builder = new StringBuilder();
+            builder.Append("Top 10 users by experience \n");
+            foreach (UserInfo user in users)
+            {
+                try
+                {
+                    builder.Append(Program.Guild.GetUser(user.GetDiscordId()).Tag());
+                }
+                catch
+                {
+                    builder.Append("InvalidUser");
+                }
+                builder.Append($" - {user.Xp} xp (Level {user.Level()}) \n");
+            }
+            await ReplyAsync(builder.ToString());
+        }
+        [Command("topkarma")]
+        [Alias("karmatop")]
+        [Summary("Gets the 10 users with higher Xp")]
+        public async Task TopKarma()
+        {
+            IEnumerable<UserInfo> users = services.databaseLoader.GetTopKarma(10);
+            StringBuilder builder = new StringBuilder();
+            builder.Append("Top 10 users by karma \n");
+            foreach (UserInfo user in users)
+            {
+                try
+                {
+                    builder.Append(Program.Guild.GetUser(user.GetDiscordId()).Tag());
+                }
+                catch
+                {
+                    builder.Append("InvalidUser");
+                }
+                builder.Append($" - {user.Karma} karma \n");
+            }
+            await ReplyAsync(builder.ToString());
         }
 
         //TODO: fix this |  |  |

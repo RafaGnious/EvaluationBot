@@ -211,6 +211,21 @@ namespace EvaluationBot.Data
             }
         }
 
+        public IEnumerable<UserInfo> GetTopXp(int users)
+        {
+           return UserInfos.Find(Builders<UserInfo>.Filter.Empty)
+                .Sort(Builders<UserInfo>
+                .Sort
+                .Descending("Xp"))
+                .Limit(users)
+                .ToEnumerable();
+        }
+
+        public IEnumerable<UserInfo> GetTopKarma(int users)
+        {
+            return UserInfos.Find(Builders<UserInfo>.Filter.Empty).Sort(Builders<UserInfo>.Sort.Descending("Karma")).Limit(users).ToEnumerable();
+        }
+
         public void PruneDatabase() => PruneDatabase(TimeSpan.FromDays(7));
 
         public void PruneDatabase(TimeSpan leftTime)
