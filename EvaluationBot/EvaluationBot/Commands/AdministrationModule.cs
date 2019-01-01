@@ -166,7 +166,73 @@ namespace EvaluationBot.Commands
             }
         }
 
+        [Command("joinstats")]
+        [Alias("serverjoinstats")]
+        [Summary("Gets Stats on the users that joined server and respective times. Syntax: ``!serverjoinstats timeBy(days/months)``")]
+        [RequireUserPermission(GuildPermission.Administrator)]
+        public async Task JoinStats(string by)
+        {
+            //await Context.Guild.DownloadUsersAsync();
+            StringBuilder builder = new StringBuilder("Joining stats for the server by ");
+            if (by.ToLower() == "day")
+            {
+                builder.Append("day \n");
+                IOrderedEnumerable<IGrouping<DateTime, IGuildUser>> users = (await Context.Guild.GetUsersAsync())
+                    .GroupBy(x=>x.JoinedAt?.Date ?? default(DateTime))
+                    .OrderBy(x => x.Key);
+                foreach (IGrouping<DateTime, IGuildUser> group in users)
+                {
+                    if (group.Key == default(DateTime)) builder.Append("Inconclusive: ");
+                    else builder.Append(group.Key.ToShortDateString());
+                    builder.Append(" : ");
+                    builder.Append(group.Count());
+                    builder.Append(" users \n");
+                }
+            }
+            else
+            {
+                builder.Append("month \n");
+                IOrderedEnumerable<IGrouping<DateTime, IGuildUser>> users = (await Context.Guild.GetUsersAsync())
+                    .GroupBy(x => x.JoinedAt.HasValue ? new DateTime( x.JoinedAt.Value.Year, x.JoinedAt.Value.Month, 1) : default(DateTime))
+                    .OrderBy(x => x.Key);
+                foreach (IGrouping<DateTime, IGuildUser> group in users)
+                {
+                    if (group.Key == default(DateTime)) builder.Append("Inconclusive: ");
+                    else builder.Append(group.Key.ToShortDateString());
+                    builder.Append(" : ");
+                    builder.Append(group.Count());
+                    builder.Append(" users \n");
+                }
 
+                //builder.Append("month \n");
+                //IOrderedEnumerable< IGrouping<int, IGrouping<int, IGuildUser>>> users = (await Context.Guild.GetUsersAsync())
+                //    .GroupBy(x => x.JoinedAt?.Month ?? 0)
+                //    .GroupBy(x=> x.First().JoinedAt?.Year ?? 0)
+                //    .OrderBy(x => x.Key)
+                //    .Select(x=>x.Or)
+                //foreach (IGrouping<int, IGrouping<int, IGuildUser>> outterGroup in users)
+                //{
+                //    if (outterGroup.Key == 0)
+                //    {
+                //        builder.Append("Inconclusive: ");
+                //        builder.Append(outterGroup.First().Count());
+                //        continue;
+                //    }
+                //    builder.Append("**");
+                //    builder.Append(outterGroup.Key);
+                //    builder.Append(":**\n           ");
+                //    foreach(IGrouping<int, IGuildUser> innerGroup in outterGroup)
+                //    {
+                        
+                //        builder.Append(innerGroup.Key);
+                //        builder.Append(" : ");
+                //        builder.Append(innerGroup.Count());
+                //        builder.Append(" users \n           ");
+                //    }
+                //}
+            }
+            await ReplyAsync(builder.ToString());
+        }
 
         [Command("clear")]
         [Summary("Clears a given amount of messages Syntax: ``!clear (amount)``")]
