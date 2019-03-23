@@ -97,7 +97,7 @@ namespace EvaluationBot.Commands
 
                 Embed embed = builder.Build();
 
-                await ReplyAsync(null, false, embed);
+                await ReplyAsync("", false, embed);
             }
             else if (user.IsBot)
             {
@@ -129,6 +129,7 @@ namespace EvaluationBot.Commands
 
                 await ReplyAsync("", false, embed);
             }
+            
 
             await Context.Message.DeleteAsync();
         }
