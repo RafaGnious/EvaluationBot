@@ -1,0 +1,32 @@
+{
+
+  "Token": "your bot's token here",
+
+  "ServerId": "Insert server id here",
+  "LogChannel": "Insert channel id here",
+  "Prefix": "!",
+  "WelcomeChannel": "Insert channel id here",
+  /*{0} will be replaced by the user's mention*/
+  "WelcomeString": "Welcome {0}!",
+  /*mongo connection string, if the db is local requires no change*/
+  "DatabaseConnectionString": "mongodb://localhost:27017",
+
+  "XpPerMessage": "7",
+
+  "XpCooldown": "30000",
+
+  "IntrosChannel": "Insert channel id here",
+
+  "KarmaTriggers": [
+    "thanks",
+    "thx",
+    "cheers"
+  ],
+
+  "KarmaCooldown": "30000",
+  "CommandsChannel": "Insert channel id here",
+  "UserCollection": "UserInfos",
+  "TimedActionsCollection": "TimedActions"
+
+
+}

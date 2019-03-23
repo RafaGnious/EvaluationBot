@@ -13,6 +13,7 @@ namespace EvaluationBot.Serialization
         public ulong WelcomeChannel { get; set; }
         public string WelcomeString { get; set; }
         public string DatabaseConnectionString { get; set; }
+        public string DatabaseName { get; set; }
         public int XpPerMessage { get; set; }
         public int XpCooldown { get; set; }
         public ulong IntrosChannel { get; set; }

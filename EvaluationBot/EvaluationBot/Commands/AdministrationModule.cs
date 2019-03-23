@@ -21,6 +21,16 @@ namespace EvaluationBot.Commands
         {
             this.services = services;
         }
+        [Command("tag")]
+        [RequireUserPermission(GuildPermission.Administrator)]
+        public async Task Tag(IRole role, [Remainder]string content)
+        {
+            await Context.Message.DeleteAsync();
+            bool oldState = role.IsMentionable;
+            await role.ModifyAsync(x => x.Mentionable = true);
+            await Context.Channel.SendMessageAsync($"{role.Mention} {content}");
+            if (!oldState) await role.ModifyAsync(x => x.Mentionable = false);
+        }
 
         [Command("say")]
         [RequireUserPermission(GuildPermission.Administrator)]
